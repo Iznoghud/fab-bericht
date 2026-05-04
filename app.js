@@ -426,8 +426,7 @@ function clearInvCache() {
         sm.className = 'status-msg done';
         sm.textContent = String.fromCodePoint(0x2713) + ' Ergebnis aus Cache (' + (mins < 60 ? mins + ' Min' : Math.round(mins/60) + ' Std') + ' alt)';
       }
-      document.getElementById('btn-run').disabled    = true;
-      document.getElementById('btn-export').disabled = false;
+      document.getElementById('btn-run').disabled = true;
       buildMehrFarbenCache();
       render();
     } else {
@@ -536,8 +535,7 @@ function runAnalyse() {
   const sm   = document.getElementById('status-msg');
   sm.className = 'status-msg running';
   sm.innerHTML = '<span class="spinner" aria-hidden="true"></span>Analysiere…';
-  document.getElementById('btn-run').disabled    = true;
-  document.getElementById('btn-export').disabled = true;
+  document.getElementById('btn-run').disabled = true;
 
   setTimeout(() => {
     try {
@@ -574,8 +572,7 @@ function runAnalyse() {
       sm.className = 'status-msg done';
       sm.textContent = '✓ ' + gesamt.toLocaleString('de') + ' fehlende C/R · '
         + hauptsets.size + ' Hauptsets · ' + anderesets.size + ' andere Produkte';
-      document.getElementById('btn-run').disabled    = true;
-      document.getElementById('btn-export').disabled = false;
+      document.getElementById('btn-run').disabled = true;
       render();
     } catch(err) {
       sm.className = 'status-msg err';
@@ -2248,56 +2245,6 @@ function erfExportCSV() {
 // ════════════════════════════════════════════════════════
 //  EXCEL EXPORT
 // ════════════════════════════════════════════════════════
-function exportXlsx() {
-  if (!S.result) return;
-  const r  = S.result;
-  const wb = XLSX.utils.book_new();
-
-  // Ranking-Sheets für beide Gruppen
-  const mkRankingSheet = (gruppe) => gruppe.ranking.map((row,i) => ({
-    'Rang': i+1,
-    'Set-Gruppe': SET_GRUPPE[row.expansion]||row.expansion,
-    'Set': row.expansion,
-    'First Edition': row.first_ed ? 'Ja' : 'Nein',
-    'Karten im Set gesamt': row.gesamt,
-    'Verschiedene fehlend': row.verschiedene,
-    'Karten mit 0 Stück': row.null_stueck,
-    'Fehlende Stück gesamt': row.fehlend_gesamt,
-    'Fehlquote %': row.fehlquote,
-  }));
-
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mkRankingSheet(r.haupt)),  'Ranking - Hauptsets');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mkRankingSheet(r.andere)), 'Ranking - Andere');
-
-  // Hauptsets — ein Tab pro Set
-  r.haupt.ranking.forEach(row => {
-    // Im Export: ungefiltert (alle Seltenheiten, alle Foils)
-    const karten = (r.haupt.setsData[row.expansion]||[]).map((k,i) => ({
-      'Nr.': k.collectorNumber||'', 'CardmarketID': k.id, 'Kartenname': k.name,
-      'Seltenheit': k.rarity, 'Foil': k.foilType==='none' ? '' : k.foilType,
-      'Im Inventar': k.im_inv, 'Fehlende Menge': k.fehlend,
-    }));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(karten),
-      setTabName(row.expansion).slice(0,31));
-  });
-
-  // Andere Produkte — ein Tab pro Produkt
-  r.andere.ranking.forEach(row => {
-    const karten = (r.andere.setsData[row.expansion]||[]).map((k,i) => ({
-      'Nr.': k.collectorNumber||'', 'CardmarketID': k.id, 'Kartenname': k.name,
-      'Seltenheit': k.rarity, 'Foil': k.foilType==='none' ? '' : k.foilType,
-      'Im Inventar': k.im_inv, 'Fehlende Menge': k.fehlend,
-    }));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(karten),
-      ('A_' + setTabName(row.expansion)).slice(0,31));
-  });
-
-  const heute = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, 'bericht_' + heute + '.xlsx');
-  const sm = document.getElementById('status-msg');
-  sm.className = 'status-msg done';
-  sm.textContent = '✓ bericht_' + heute + '.xlsx heruntergeladen';
-}
 
 function renderKartenRow(card, ziel, extraSet) {
   const pct  = Math.min(100, Math.round(card.im_inv/ziel*100));
