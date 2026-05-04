@@ -1,0 +1,30 @@
+#!/bin/bash
+
+REPO=$(git rev-parse --show-toplevel)
+FILE="$REPO/index.html"
+
+# Aktuelle Version aus index.html lesen (z.B. "1.2.0" oder "1.2")
+CURRENT=$(grep -oP 'class="header-version">v\K[0-9]+\.[0-9]+\.?[0-9]*' "$FILE" | head -1)
+
+if [ -z "$CURRENT" ]; then
+  exit 0
+fi
+
+# Version in Teile zerlegen
+IFS='.' read -ra PARTS <<< "$CURRENT"
+MAJOR="${PARTS[0]:-1}"
+MINOR="${PARTS[1]:-0}"
+PATCH="${PARTS[2]:-0}"
+
+# Patch hochzählen
+PATCH=$((PATCH + 1))
+NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+
+# Datum im Format dd.mm.yyyy hh:mm
+DATE=$(date '+%d.%m.%Y %H:%M')
+
+# Version und Datum in index.html ersetzen
+sed -i "s|class=\"header-version\">v[^<]*|class=\"header-version\">v${NEW_VERSION} · ${DATE}|" "$FILE"
+
+# index.html in den Commit aufnehmen
+git add "$FILE"
