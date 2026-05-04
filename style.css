@@ -346,6 +346,28 @@ header::after {
 .dz-status.ok  { color: var(--common); }
 .dz-status.err { color: var(--danger); }
 
+/* ── Einstellungen Toggle ── */
+.config-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+.config-toggle:hover { color: var(--gold-light); }
+
+.config-arrow {
+  font-size: .65rem;
+  color: var(--text-muted);
+  transition: transform .2s;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+.config-arrow.open { transform: rotate(90deg); }
+
+.config-body {
+  display: none;
+  overflow: hidden;
+}
+.config-body.open { display: block; }
+
 /* ── Config ── */
 .config-card {
   background: var(--bg);

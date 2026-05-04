@@ -22,7 +22,7 @@
     <h1>Flesh &amp; Blood — Inventar-Bericht</h1>
     <p>Bestandsanalyse · läuft vollständig lokal im Browser · keine Daten werden übertragen</p>
   </div>
-  <span class="header-version">v1.2.1 · 04.05.2026 22:53</span>
+  <span class="header-version">v1.2.2 · 04.05.2026 22:58</span>
   <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Einstellungen" style="display:none">⚙️</button>
 </header>
 
@@ -83,25 +83,6 @@
 
     <hr class="gold-divider">
 
-    <!-- Einstellungen -->
-    <section aria-labelledby="lbl-config">
-      <h2 class="section-heading" id="lbl-config">Einstellungen</h2>
-      <div class="config-card">
-        <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;letter-spacing:.04em">Ziel-Menge pro Rarität:</p>
-        <div class="config-row"><label class="config-label" for="cfg-ziel-Token">Token</label><input class="config-input" type="number" id="cfg-ziel-Token" value="20" min="0" max="999"></div>
-        <div class="config-row"><label class="config-label" for="cfg-ziel-Common">Common</label><input class="config-input" type="number" id="cfg-ziel-Common" value="20" min="0" max="999"></div>
-        <div class="config-row"><label class="config-label" for="cfg-ziel-Rare">Rare</label><input class="config-input" type="number" id="cfg-ziel-Rare" value="20" min="0" max="999"></div>
-        <div class="config-row"><label class="config-label" for="cfg-ziel-Majestic">Majestic</label><input class="config-input" type="number" id="cfg-ziel-Majestic" value="4" min="0" max="999"></div>
-        <div class="config-row"><label class="config-label" for="cfg-ziel-Super-Rare">Super Rare</label><input class="config-input" type="number" id="cfg-ziel-Super-Rare" value="2" min="0" max="999"></div>
-        <div class="config-row"><label class="config-label" for="cfg-ziel-Legendary">Legendary</label><input class="config-input" type="number" id="cfg-ziel-Legendary" value="1" min="0" max="999"></div>
-        <div class="config-row"><label class="config-label" for="cfg-ziel-Fabled">Fabled</label><input class="config-input" type="number" id="cfg-ziel-Fabled" value="1" min="0" max="999"></div>
-        <div class="config-row"><label class="config-label" for="cfg-ziel-Marvel">Marvel</label><input class="config-input" type="number" id="cfg-ziel-Marvel" value="1" min="0" max="999"></div>
-        <div class="config-row"><label class="config-label" for="cfg-ziel-Promo">Promo</label><input class="config-input" type="number" id="cfg-ziel-Promo" value="1" min="0" max="999"></div>
-      </div>
-    </section>
-
-    <hr class="gold-divider">
-
     <!-- Analyse -->
     <section aria-labelledby="lbl-analyse">
       <h2 class="section-heading" id="lbl-analyse">Analyse</h2>
@@ -111,6 +92,31 @@
       </button>
       <div class="status-msg" id="status-msg" role="status" aria-live="polite"
            style="margin-top:8px"></div>
+    </section>
+
+    <hr class="gold-divider">
+
+    <!-- Einstellungen (einklappbar) -->
+    <section aria-labelledby="lbl-config">
+      <h2 class="section-heading config-toggle" id="lbl-config"
+          onclick="toggleEinstellungen()" aria-expanded="false" aria-controls="config-body">
+        Einstellungen
+        <span class="config-arrow" id="config-arrow">▶</span>
+      </h2>
+      <div class="config-body" id="config-body">
+        <div class="config-card">
+          <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;letter-spacing:.04em">Ziel-Menge pro Rarität:</p>
+          <div class="config-row"><label class="config-label" for="cfg-ziel-Token">Token</label><input class="config-input" type="number" id="cfg-ziel-Token" value="20" min="0" max="999"></div>
+          <div class="config-row"><label class="config-label" for="cfg-ziel-Common">Common</label><input class="config-input" type="number" id="cfg-ziel-Common" value="20" min="0" max="999"></div>
+          <div class="config-row"><label class="config-label" for="cfg-ziel-Rare">Rare</label><input class="config-input" type="number" id="cfg-ziel-Rare" value="20" min="0" max="999"></div>
+          <div class="config-row"><label class="config-label" for="cfg-ziel-Majestic">Majestic</label><input class="config-input" type="number" id="cfg-ziel-Majestic" value="4" min="0" max="999"></div>
+          <div class="config-row"><label class="config-label" for="cfg-ziel-Super-Rare">Super Rare</label><input class="config-input" type="number" id="cfg-ziel-Super-Rare" value="2" min="0" max="999"></div>
+          <div class="config-row"><label class="config-label" for="cfg-ziel-Legendary">Legendary</label><input class="config-input" type="number" id="cfg-ziel-Legendary" value="1" min="0" max="999"></div>
+          <div class="config-row"><label class="config-label" for="cfg-ziel-Fabled">Fabled</label><input class="config-input" type="number" id="cfg-ziel-Fabled" value="1" min="0" max="999"></div>
+          <div class="config-row"><label class="config-label" for="cfg-ziel-Marvel">Marvel</label><input class="config-input" type="number" id="cfg-ziel-Marvel" value="1" min="0" max="999"></div>
+          <div class="config-row"><label class="config-label" for="cfg-ziel-Promo">Promo</label><input class="config-input" type="number" id="cfg-ziel-Promo" value="1" min="0" max="999"></div>
+        </div>
+      </div>
     </section>
 
     <!-- Export -->

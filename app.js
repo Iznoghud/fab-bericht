@@ -927,6 +927,16 @@ function render() {
 // ════════════════════════════════════════════════════════
 //  INTERAKTIONEN
 // ════════════════════════════════════════════════════════
+function toggleEinstellungen() {
+  const body  = document.getElementById('config-body');
+  const arrow = document.getElementById('config-arrow');
+  const h2    = document.getElementById('lbl-config');
+  if (!body) return;
+  const open = body.classList.toggle('open');
+  arrow?.classList.toggle('open', open);
+  h2?.setAttribute('aria-expanded', open);
+}
+
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
   const btn = document.getElementById('sidebar-toggle');
