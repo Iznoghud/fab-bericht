@@ -249,6 +249,7 @@ function loadFile(file, type) {
     }
     document.getElementById('btn-run').disabled = !(S.kartenCSV && S.invCSV);
     if (S.kartenCSV && S.invCSV) { try { localStorage.removeItem('fab_result'); localStorage.removeItem('fab_result_ts'); } catch(e) {} }
+    if (!S.result) renderStartGuide();
   };
   reader.readAsText(file, 'UTF-8');
 }
@@ -320,6 +321,7 @@ function clearKartenCache() {
   const box = document.getElementById('cache-info-box');
   if (box) box.style.display = 'none';
   document.getElementById('btn-run').disabled = true;
+  if (!S.result) renderStartGuide();
 }
 
 // ════════════════════════════════════════════════════════
@@ -399,6 +401,7 @@ function clearInvCache() {
   const box = document.getElementById('cache-info-box-inv');
   if (box) box.style.display = 'none';
   document.getElementById('btn-run').disabled = true;
+  if (!S.result) renderStartGuide();
 }
 
 // Cache beim Seitenstart laden
@@ -427,8 +430,12 @@ function clearInvCache() {
       document.getElementById('btn-export').disabled = false;
       buildMehrFarbenCache();
       render();
+    } else {
+      renderStartGuide();
     }
-  } catch(e) {}
+  } catch(e) {
+    renderStartGuide();
+  }
 })();
 
 // ════════════════════════════════════════════════════════
@@ -810,6 +817,65 @@ function renderKartenPanel(data, sektion) {
   }
 
   return '<div class="set-filter" role="group" aria-label="Set auswählen">' + alleBtn + setBtns + '</div>' + filterBar + tableHtml;
+}
+
+// ════════════════════════════════════════════════════════
+//  START-GUIDE
+// ════════════════════════════════════════════════════════
+function renderStartGuide() {
+  const kartenOk   = !!S.kartenCSV;
+  const invOk      = !!S.invCSV;
+  const bereit     = kartenOk && invOk;
+  const kartenMeta = (() => { try { return JSON.parse(localStorage.getItem(LS_META)     || 'null'); } catch(e) { return null; } })();
+  const invMeta    = (() => { try { return JSON.parse(localStorage.getItem(LS_INV_META) || 'null'); } catch(e) { return null; } })();
+
+  function stepStatus(ok, meta) {
+    if (ok && meta) {
+      const date = new Date(meta.ts).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+      return '<span class="guide-status done">✓ ' + esc(meta.name) + ' · ' + meta.rows.toLocaleString('de') + ' Einträge · ' + date + '</span>';
+    }
+    if (ok) return '<span class="guide-status done">✓ Datei geladen</span>';
+    return '<span class="guide-status pending">Datei in der Sidebar hochladen</span>';
+  }
+
+  document.getElementById('main').innerHTML =
+    '<div class="guide-wrap">' +
+      '<div class="guide-header">' +
+        '<div class="guide-emblem" aria-hidden="true">⚔</div>' +
+        '<div>' +
+          '<h2 class="guide-title">Flesh &amp; Blood — Inventar-Bericht</h2>' +
+          '<p class="guide-sub">Bestandsanalyse · vollständig lokal · keine Daten werden übertragen</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="guide-steps">' +
+        '<div class="guide-step' + (kartenOk ? ' done' : ' active') + '">' +
+          '<div class="guide-num">1</div>' +
+          '<div class="guide-body">' +
+            '<div class="guide-step-title">Kartenliste laden</div>' +
+            '<div class="guide-step-hint">Vollständige FaB-Karten CSV (z.B. von cardmarket)</div>' +
+            stepStatus(kartenOk, kartenMeta) +
+          '</div>' +
+        '</div>' +
+        '<div class="guide-step' + (invOk ? ' done' : kartenOk ? ' active' : '') + '">' +
+          '<div class="guide-num">2</div>' +
+          '<div class="guide-body">' +
+            '<div class="guide-step-title">Inventar laden</div>' +
+            '<div class="guide-step-hint">Aktueller Lagerbestand CSV</div>' +
+            stepStatus(invOk, invMeta) +
+          '</div>' +
+        '</div>' +
+        '<div class="guide-step' + (bereit ? ' active' : '') + '">' +
+          '<div class="guide-num">3</div>' +
+          '<div class="guide-body">' +
+            '<div class="guide-step-title">Analyse starten</div>' +
+            '<div class="guide-step-hint">Vergleicht Inventar mit der Kartenliste und zeigt Fehlmengen</div>' +
+            (bereit
+              ? '<button class="btn btn-primary guide-btn" onclick="runAnalyse()">Analyse starten</button>'
+              : '<span class="guide-status pending">Warte auf Schritt 1 und 2</span>') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
 }
 
 // ════════════════════════════════════════════════════════
