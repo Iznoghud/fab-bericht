@@ -238,6 +238,15 @@ header::after {
   margin-top: 1px;
 }
 
+.header-version {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  color: var(--gold-dim);
+  letter-spacing: .06em;
+  flex-shrink: 0;
+}
+
 /* ══════════════════════════════════════════════
    LAYOUT
    ══════════════════════════════════════════════ */
