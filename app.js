@@ -1161,7 +1161,7 @@ function buildMehrFarbenCache() {
 }
 
 function hatMehrereFarben(cardName) {
-  const base = cardName.replace(/\s*\((Red|Yellow|Blue)\)\s*/i,'').trim();
+  const base = cleanCardName(cardName);
   if (_mehrFarbenCache.has(base)) return _mehrFarbenCache.get(base);
   // Fallback wenn Cache leer
   if (!S.result) return false;
