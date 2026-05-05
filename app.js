@@ -586,31 +586,6 @@ function runAnalyse() {
 // ════════════════════════════════════════════════════════
 //  FILTER — Karten für Anzeige filtern
 // ════════════════════════════════════════════════════════
-function filterKarten(cards) {
-  // Vorab: welche Raritäten haben eine Regular-Version?
-  const hasRegular = new Set(
-    cards.filter(c => (c.foilType||'none') === 'none').map(c => c.rarity)
-  );
-  return cards.filter(card => {
-    const ft = card.foilType || 'none';
-    // Foil-Filter: nur anwenden wenn es auch eine Regular-Version gibt
-    // Karten die NUR als Foil existieren werden allein durch den Seltenheits-Filter gesteuert
-    if (ft === 'rainbow' && !S.f.rainbow && hasRegular.has(card.rarity)) return false;
-    if (ft === 'cold'    && !S.f.cold    && hasRegular.has(card.rarity)) return false;
-    if (ft === 'rainbow' && !S.f.rainbow && !hasRegular.has(card.rarity)) {
-      // Nur-Foil-Karte: Foil-Filter ignorieren, Seltenheit entscheidet
-    }
-    if (ft === 'cold'    && !S.f.cold    && !hasRegular.has(card.rarity)) {
-      // Nur-Foil-Karte: Foil-Filter ignorieren, Seltenheit entscheidet
-    }
-    // Seltenheits-Filter
-    const rarKey = card.rarity;
-    if (!(rarKey in S.f)) return false;
-    return S.f[rarKey];
-  });
-}
-
-// ════════════════════════════════════════════════════════
 //  RENDER — Hilfsfunktionen
 // ════════════════════════════════════════════════════════
 function esc(s) {
@@ -689,8 +664,8 @@ function renderRankingPanel(data, sektion) {
       ? '<span style="color:var(--text-muted);font-size:.8125rem">' + esc(grp) + ' / </span>' + esc(row.expansion.replace(/- (First|Unlimited|Alpha)/,'').trim())
       : esc(row.expansion);
     const exp = row.expansion.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return '<tr onclick="goToSet(\'' + exp + '\',\'' + sektion + '\')" style="cursor:pointer" tabindex="0" role="row"' +
-      ' onkeydown="if(event.key===\'Enter\')goToSet(\'' + exp + '\',\'' + sektion + '\')">' +
+    return '<tr onclick="goToKartenerfassung(\'' + exp + '\')" style="cursor:pointer" tabindex="0" role="row"' +
+      ' onkeydown="if(event.key===\'Enter\')goToKartenerfassung(\'' + exp + '\')">' +
       '<td><span class="rank-num" aria-hidden="true">' + (i+1) + '</span>' + lbl + fe + '</td>' +
       '<td class="num">' + row.verschiedene + '</td>' +
       '<td class="num" style="color:var(--common)">' + (row.fehlend_common||0) + '</td>' +
@@ -698,122 +673,7 @@ function renderRankingPanel(data, sektion) {
   }).join('');
 
   return '<div class="table-wrap"><table aria-label="Set-Ranking"><thead><tr>' + thead + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '<p style="margin-top:10px;font-family:var(--font-mono);font-size:.75rem;color:var(--text-muted)">Zeile anklicken um Kartendetails zu öffnen · Spaltenköpfe zum Sortieren</p>';
-}
-
-function renderKartenRow(card, ziel, extraSet) {
-  const pct  = Math.min(100, Math.round(card.im_inv/ziel*100));
-  const zero = card.im_inv===0 ? '<span class="zero-badge">0×</span>' : '';
-  const foilTag = card.foilType==='rainbow' ? '<span class="foil-tag rf" title="Rainbow Foil">RF</span>' :
-                  card.foilType==='cold'    ? '<span class="foil-tag cf" title="Cold Foil">CF</span>' : '';
-  const setCell = extraSet ? '<td style="color:var(--text-dim);font-size:.8rem">' + esc(card.expansion||'–') + '</td>' : '';
-  return '<tr>' +
-    '<td><span class="dot" style="background:' + getDotColor(card.name) + '" aria-hidden="true"></span>' +
-    foilTag + esc(card.name) + '</td>' +
-    '<td style="color:' + rarityColor(card.rarity) + ';font-weight:600">' + esc(card.rarity) + '</td>' +
-    setCell +
-    '<td><div class="prog-cell">' + zero +
-      '<div class="prog-bg" aria-hidden="true"><div class="prog-fill" style="width:' + pct + '%"></div></div>' +
-      '<span class="prog-txt">' + card.im_inv + ' / ' + ziel + '</span></div></td>' +
-    '<td class="num" style="color:var(--gold-light);font-weight:600">' + card.fehlend + '</td></tr>';
-}
-
-function buildKartenTable(cards, sektion, search, extraSet) {
-  const baseCols = [
-    { key:'name',    label:'Kartenname', num:false },
-    { key:'rarity',  label:'Seltenheit', num:false },
-  ];
-  const midCols  = extraSet ? [{ key:'expansion', label:'Set', num:false }] : [];
-  const endCols  = [
-    { key:'im_inv',  label:'Im Inventar', num:true },
-    { key:'fehlend', label:'Fehlend',     num:true },
-  ];
-  const cCols = [...baseCols, ...midCols, ...endCols];
-  const thead = cCols.map(col => {
-    const s   = S.cardSortCol===col.key;
-    const arr = s ? (S.cardSortDir===1?'▲':'▼') : '▲';
-    return '<th class="' + (col.num?'num ':'') + (s?'sorted':'') + '"' +
-      ' onclick="sortCards(\'' + col.key + '\')" scope="col"' +
-      ' aria-sort="' + (s?(S.cardSortDir===1?'ascending':'descending'):'none') + '">' +
-      esc(col.label) + ' <span class="sort-arrow" aria-hidden="true">' + arr + '</span></th>';
-  }).join('');
-  const ziel  = 20;
-  const tbody = cards.map(card => renderKartenRow(card, ziel, extraSet)).join('');
-  return '<div class="search-row">' +
-      '<input class="search-input" type="search" placeholder="Kartenname suchen…" value="' + esc(search) + '"' +
-        ' aria-label="Kartenname suchen" oninput="S.search[\'' + sektion + '\']=this.value;render()">' +
-      '<span class="count-lbl" aria-live="polite">' + cards.length.toLocaleString('de') + ' Karten</span>' +
-    '</div>' +
-    '<div class="table-wrap"><table aria-label="Fehlende Karten">' +
-      '<thead><tr>' + thead + '</tr></thead><tbody>' + tbody + '</tbody></table></div>';
-}
-
-function fehlendFuerSet(cards) {
-  if (!cards) return 0;
-  const hasRegular = new Set(
-    cards.filter(c => (c.foilType||'none') === 'none').map(c => c.rarity)
-  );
-  return cards
-    .filter(card => {
-      const ft = card.foilType || 'none';
-      if (ft === 'rainbow' && !S.f.rainbow && hasRegular.has(card.rarity)) return false;
-      if (ft === 'cold'    && !S.f.cold    && hasRegular.has(card.rarity)) return false;
-      if (!(card.rarity in S.f)) return false;
-      return S.f[card.rarity];
-    })
-    .reduce((s, card) => s + card.fehlend, 0);
-}
-
-function renderKartenPanel(data, sektion) {
-  const activeSet = S.activeSet[sektion];
-  const search    = S.search[sektion];
-  const alleAktiv = activeSet === '__alle__';
-
-  // "Alle"-Button immer ganz links
-  const alleBtn =
-    '<button class="set-btn' + (alleAktiv ? ' active' : '') + '"' +
-    ' onclick="selectSet(\'__alle__\',\'' + sektion + '\')"' +
-    ' aria-pressed="' + alleAktiv + '">' +
-    '<span class="set-btn-name">Alle</span>' +
-    '<span class="set-btn-count">alle Sets</span>' +
-    '</button>';
-
-  // Set-Buttons nur anzeigen wenn "Alle" NICHT aktiv
-  const setBtns = data.ranking.map(row => {
-    const fe     = row.first_ed ? ' fe' : '';
-    const active = activeSet===row.expansion ? ' active' : '';
-    const exp    = row.expansion.replace(/\\/g,'\\\\').replace(/'/g,"\'");
-    return '<button class="set-btn' + fe + active + '"' +
-      ' onclick="selectSet(\'' + exp + '\',\'' + sektion + '\')"' +
-      ' aria-pressed="' + (activeSet===row.expansion) + '">' +
-      '<span class="set-btn-name">' + esc(row.expansion) + '</span>' +
-      '<span class="set-btn-count">' + fehlendFuerSet(data.setsData[row.expansion]) + ' fehlend</span>' +
-      '</button>';
-  }).join('');
-
-  const filterBar = renderFilterBar(sektion);
-  let tableHtml   = '<p style="color:var(--text-muted);padding:32px;text-align:center;font-size:.9375rem">Set oben auswählen um die fehlenden Karten anzuzeigen</p>';
-
-  if (alleAktiv) {
-    let cards = [];
-    data.ranking.forEach(row => {
-      (data.setsData[row.expansion]||[]).forEach(card => {
-        cards.push(Object.assign({}, card, { expansion: row.expansion }));
-      });
-    });
-    cards = filterKarten(cards);
-    if (search) { const q=search.toLowerCase(); cards=cards.filter(c=>c.name.toLowerCase().includes(q)); }
-    cards.sort((a,b) => { const av=a[S.cardSortCol],bv=b[S.cardSortCol]; return S.cardSortDir*(typeof av==='string'?av.localeCompare(bv):(av-bv)); });
-    tableHtml = buildKartenTable(cards, sektion, search, true);
-
-  } else if (activeSet && data.setsData[activeSet]) {
-    let cards = filterKarten(data.setsData[activeSet]);
-    if (search) { const q=search.toLowerCase(); cards=cards.filter(c=>c.name.toLowerCase().includes(q)); }
-    cards.sort((a,b) => { const av=a[S.cardSortCol],bv=b[S.cardSortCol]; return S.cardSortDir*(typeof av==='string'?av.localeCompare(bv):(av-bv)); });
-    tableHtml = buildKartenTable(cards, sektion, search, false);
-  }
-
-  return '<div class="set-filter" role="group" aria-label="Set auswählen">' + alleBtn + setBtns + '</div>' + filterBar + tableHtml;
+    '<p style="margin-top:10px;font-family:var(--font-mono);font-size:.75rem;color:var(--text-muted)">Zeile anklicken um Kartenerfassung für dieses Set zu öffnen · Spaltenköpfe zum Sortieren</p>';
 }
 
 // ════════════════════════════════════════════════════════
@@ -899,15 +759,14 @@ function render() {
   const subTabs =
     '<div class="tabs" role="tablist" aria-label="Ansicht wechseln">' +
       '<button class="tab ' + (tab==='ranking'?'active':'') + '" role="tab" aria-selected="' + (tab==='ranking') + '" onclick="switchTab(\'ranking\')">Ranking</button>' +
-      '<button class="tab ' + (tab==='karten'?'active':'') + '" role="tab" aria-selected="' + (tab==='karten') + '" onclick="switchTab(\'karten\')">Karten</button>' +
       (hasDiff ? '<button class="tab ' + (tab==='diff'?'active':'') + '" role="tab" aria-selected="' + (tab==='diff') + '" onclick="switchTab(\'diff\')">Verkäufe</button>' : '') +
       '<button class="tab ' + (tab==='scan'?'active':'') + '" role="tab" aria-selected="' + (tab==='scan') + '" onclick="switchTab(\'scan\')">Kartenerfassung</button>' +
       '<button class="tab ' + (tab==='wants'?'active':'') + '" role="tab" aria-selected="' + (tab==='wants') + '" onclick="switchTab(\'wants\')">Wantsliste</button>' +
     '</div>';
 
   let panelContent = '';
+  if (tab === 'karten') { S.tab[S.sektion] = 'ranking'; tab = 'ranking'; }
   if (tab === 'ranking') panelContent = renderRankingPanel(data, sek);
-  if (tab === 'karten')  panelContent = renderKartenPanel(data, sek);
   if (tab === 'diff')    panelContent = renderDiffPanel();
   if (tab === 'scan')    panelContent = renderScanPanel();
   if (tab === 'wants')   panelContent = renderWantsPanel();
@@ -964,14 +823,15 @@ function switchTab(t) {
   S.search[S.sektion] = '';
   render();
 }
-function selectSet(s, sek) {
-  S.sektion = sek;
-  S.tab[sek] = 'karten';
-  S.activeSet[sek] = s;
-  S.search[sek] = '';
+function goToKartenerfassung(expansion) {
+  S.erf.expansion = expansion;
+  S.erf.expSearch = expansion;
+  S.erf.expOpen   = false;
+  S.tab[S.sektion] = 'scan';
+  S.activeSet[S.sektion] = null;
+  S.search[S.sektion] = '';
   render();
 }
-function goToSet(s, sek)  { selectSet(s, sek); }
 function sortRanking(col) { S.sortDir = S.sortCol===col ? -S.sortDir : -1; S.sortCol=col; render(); }
 function sortCards(col)   { S.cardSortDir = S.cardSortCol===col ? -S.cardSortDir : 1; S.cardSortCol=col; render(); }
 function toggleFilter(key){ S.f[key] = !S.f[key]; render(); }
@@ -2240,171 +2100,4 @@ function erfExportCSV() {
   const a    = Object.assign(document.createElement('a'), { href: url, download: 'fab_erfassung_' + new Date().toISOString().slice(0,10) + '.csv' });
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
-}
-
-// ════════════════════════════════════════════════════════
-//  EXCEL EXPORT
-// ════════════════════════════════════════════════════════
-
-function renderKartenRow(card, ziel, extraSet) {
-  const pct  = Math.min(100, Math.round(card.im_inv/ziel*100));
-  const zero = card.im_inv===0 ? '<span class="zero-badge">0×</span>' : '';
-  const foilTag = card.foilType==='rainbow' ? '<span class="foil-tag rf" title="Rainbow Foil">RF</span>' :
-                  card.foilType==='cold'    ? '<span class="foil-tag cf" title="Cold Foil">CF</span>' : '';
-  const setCell = extraSet ? '<td style="color:var(--text-dim);font-size:.8rem">' + esc(card.expansion||'–') + '</td>' : '';
-  return '<tr>' +
-    '<td><span class="dot" style="background:' + getDotColor(card.name) + '" aria-hidden="true"></span>' +
-    foilTag + esc(card.name) + '</td>' +
-    '<td style="color:' + rarityColor(card.rarity) + ';font-weight:600">' + esc(card.rarity) + '</td>' +
-    setCell +
-    '<td><div class="prog-cell">' + zero +
-      '<div class="prog-bg" aria-hidden="true"><div class="prog-fill" style="width:' + pct + '%"></div></div>' +
-      '<span class="prog-txt">' + card.im_inv + ' / ' + ziel + '</span></div></td>' +
-    '<td class="num" style="color:var(--gold-light);font-weight:600">' + card.fehlend + '</td></tr>';
-}
-
-function buildKartenTable(cards, sektion, search, extraSet) {
-  const baseCols = [
-    { key:'name',    label:'Kartenname', num:false },
-    { key:'rarity',  label:'Seltenheit', num:false },
-  ];
-  const midCols  = extraSet ? [{ key:'expansion', label:'Set', num:false }] : [];
-  const endCols  = [
-    { key:'im_inv',  label:'Im Inventar', num:true },
-    { key:'fehlend', label:'Fehlend',     num:true },
-  ];
-  const cCols = [...baseCols, ...midCols, ...endCols];
-  const thead = cCols.map(col => {
-    const s   = S.cardSortCol===col.key;
-    const arr = s ? (S.cardSortDir===1?'▲':'▼') : '▲';
-    return '<th class="' + (col.num?'num ':'') + (s?'sorted':'') + '"' +
-      ' onclick="sortCards(\'' + col.key + '\')" scope="col"' +
-      ' aria-sort="' + (s?(S.cardSortDir===1?'ascending':'descending'):'none') + '">' +
-      esc(col.label) + ' <span class="sort-arrow" aria-hidden="true">' + arr + '</span></th>';
-  }).join('');
-  const ziel  = 20;
-  const tbody = cards.map(card => renderKartenRow(card, ziel, extraSet)).join('');
-  return '<div class="search-row">' +
-      '<input class="search-input" type="search" placeholder="Kartenname suchen…" value="' + esc(search) + '"' +
-        ' aria-label="Kartenname suchen" oninput="S.search[\'' + sektion + '\']=this.value;render()">' +
-      '<span class="count-lbl" aria-live="polite">' + cards.length.toLocaleString('de') + ' Karten</span>' +
-    '</div>' +
-    '<div class="table-wrap"><table aria-label="Fehlende Karten">' +
-      '<thead><tr>' + thead + '</tr></thead><tbody>' + tbody + '</tbody></table></div>';
-}
-
-function fehlendFuerSet(cards) {
-  if (!cards) return 0;
-  return cards
-    .filter(card => {
-      if (card.foilType === 'rainbow' && !S.f.rainbow) return false;
-      if (card.foilType === 'cold'    && !S.f.cold)    return false;
-      if (!(card.rarity in S.f)) return false;
-      return S.f[card.rarity];
-    })
-    .reduce((s, card) => s + card.fehlend, 0);
-}
-
-
-function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  const btn = document.getElementById('sidebar-toggle');
-  if (!sb) return;
-  const open = sb.classList.toggle('sidebar-open');
-  if (btn) btn.textContent = open ? '✕' : '⚙️';
-}
-function initMobileUI() {
-  if (window.innerWidth > 768) return;
-  const btn = document.getElementById('sidebar-toggle');
-  if (btn) btn.style.display = '';
-  const sb = document.getElementById('sidebar');
-  if (!sb) return;
-  // Sidebar: offen wenn noch keine Analyse, danach immer eingeklappt
-  if (S.result) sb.classList.remove('sidebar-open');
-  else if (!sb.classList.contains('sidebar-open')) sb.classList.add('sidebar-open');
-}
-
-function wechseSektion(sek) {
-  S.sektion = sek;
-  S.sortCol = 'fehlend_gesamt'; S.sortDir = -1;
-  S.cardSortCol = 'name'; S.cardSortDir = 1;
-  render();
-}
-function switchTab(t) {
-  S.tab[S.sektion] = t;
-  S.activeSet[S.sektion] = null;
-  S.search[S.sektion] = '';
-  render();
-}
-function selectSet(s, sek) {
-  S.sektion = sek;
-  S.tab[sek] = 'karten';
-  S.activeSet[sek] = s;
-  S.search[sek] = '';
-  render();
-}
-function goToSet(s, sek)  { selectSet(s, sek); }
-function sortRanking(col) { S.sortDir = S.sortCol===col ? -S.sortDir : -1; S.sortCol=col; render(); }
-function sortCards(col)   { S.cardSortDir = S.cardSortCol===col ? -S.cardSortDir : 1; S.cardSortCol=col; render(); }
-function toggleFilter(key){ S.f[key] = !S.f[key]; render(); }
-function toggleDiffFilter(key){ S.fd[key] = !S.fd[key]; render(); }
-
-// ════════════════════════════════════════════════════════
-//  DIFFERENZBERICHT
-// ════════════════════════════════════════════════════════
-
-function berechneDiff(altInvCSV, neuInvCSV) {
-  // Menge je cardmarketId aufbauen
-  function invMap(rows) {
-    const m = new Map();
-    rows.forEach(r => {
-      const id  = r.idProduct || r.cardmarketId || r['Product ID'] || r.id;
-      const qty = parseInt(r.quantity || r.Quantity || r.count || 0, 10);
-      if (id && !isNaN(qty)) m.set(String(id), qty);
-    });
-    return m;
-  }
-
-  const altMap = invMap(altInvCSV);
-  const neuMap = invMap(neuInvCSV);
-
-  // Kartenliste für Metadaten (Name, Seltenheit, Set)
-  const kartenMeta = new Map();
-  if (S.kartenCSV) {
-    S.kartenCSV.forEach(r => {
-      if (r.cardmarketId) kartenMeta.set(String(r.cardmarketId), r);
-    });
-  }
-
-  const items = [];
-  // Alle IDs die im alten Inventar waren
-  altMap.forEach((altQty, id) => {
-    const neuQty = neuMap.get(id) || 0;
-    const delta  = altQty - neuQty;   // positiv = verkauft
-    if (delta > 0) {
-      const meta = kartenMeta.get(id) || {};
-      items.push({
-        id,
-        name:       meta.name       || id,
-        rarity:     meta.rarity     || '–',
-        expansion:  meta.expansion  || '–',
-        foilType:   getFoilType(meta.name || ''),
-        collectorNumber: meta.collectorNumber || '',
-        altQty, neuQty, delta,
-      });
-    }
-  });
-
-  if (items.length === 0) {
-    S.diff = null;
-    return;
-  }
-
-  S.diff = { ts: Date.now(), items };
-}
-
-function sortDiff(col) {
-  if (S.diffSortCol === col) S.diffSortDir = -S.diffSortDir;
-  else { S.diffSortCol = col; S.diffSortDir = col === 'delta' ? -1 : 1; }
-  render();
 }
