@@ -1732,7 +1732,7 @@ function renderScanPanel() {
   const sessionItems = erf.session.map((e, i) =>
     '<div class="erf-session-item">' +
       '<div class="erf-session-item-name">' + esc(e.name) + '</div>' +
-      '<div class="erf-session-item-detail">' + esc(e.condition) + (e.foilType?' · '+(e.foilType==='rainbow'?'RF':'CF'):'') + '</div>' +
+      '<div class="erf-session-item-detail">' + (e.foilType==='rainbow'?'Rainbow Foil':e.foilType==='cold'?'Cold Foil':'') + '</div>' +
       '<div class="erf-session-item-badge">+' + e.qty + '</div>' +
       '<div class="erf-session-item-del" onclick="erfRemove(' + i + ')" role="button" aria-label="Entfernen">✕</div>' +
     '</div>'
