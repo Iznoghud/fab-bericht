@@ -1294,18 +1294,18 @@ td.num {
 .erf-session-count { font-size: .75rem; color: var(--text-muted); }
 .erf-session-list   { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
 .erf-session-item {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: start; gap: 8px;
   padding: 7px 10px;
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); font-size: .8rem;
 }
-.erf-session-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.erf-session-item-detail { font-size: .7rem; color: var(--text-muted); white-space: nowrap; }
-.erf-session-item-badge {
-  background: var(--gold-dim); color: var(--gold-light);
-  border-radius: 10px; padding: 1px 8px; font-size: .7rem; font-weight: 700;
-  font-family: var(--font-display); white-space: nowrap; flex-shrink: 0;
+.erf-session-item-qty {
+  font-family: var(--font-display); font-weight: 700; font-size: .8rem;
+  color: var(--gold-light); flex-shrink: 0; min-width: 26px; text-align: right; padding-top: 1px;
 }
+.erf-session-item-body { flex: 1; min-width: 0; }
+.erf-session-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.erf-session-item-detail { font-size: .7rem; color: var(--text-muted); margin-top: 1px; }
 .erf-session-item-del { color: var(--text-muted); cursor: pointer; padding: 2px 8px; font-size: 1rem; flex-shrink: 0; min-height: 32px; display: flex; align-items: center; }
 .erf-export-btn { width: 100%; min-height: 48px; font-size: 1rem; }
 .erf-sticky-export {

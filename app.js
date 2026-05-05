@@ -1333,10 +1333,13 @@ function renderWantsPanel() {
     const mehrFarben = hatMehrereFarben(e.name);
     const suffix = mehrFarben ? pitchSuffix(e.name) : '';
     const baseName = cleanCardName(e.name);
-    const cmLine = e.qty + ' ' + baseName + suffix;
+    const foilLabel = e.foilType==='rainbow'?'Rainbow Foil':e.foilType==='cold'?'Cold Foil':'';
     return '<div class="erf-session-item">' +
-      '<div class="erf-session-item-name" style="font-family:var(--font-mono);font-size:.8rem">' + esc(cmLine) + '</div>' +
-      '<div class="erf-session-item-badge">×' + e.qty + '</div>' +
+      '<div class="erf-session-item-qty">×' + e.qty + '</div>' +
+      '<div class="erf-session-item-body">' +
+        '<div class="erf-session-item-name" style="font-family:var(--font-mono);font-size:.8rem">' + esc(baseName + suffix) + '</div>' +
+        (foilLabel ? '<div class="erf-session-item-detail">' + foilLabel + '</div>' : '') +
+      '</div>' +
       '<div class="erf-session-item-del" onclick="wantsRemove(' + i + ')" role="button">✕</div>' +
     '</div>';
   }).join('');
@@ -1729,14 +1732,17 @@ function renderScanPanel() {
       : '<div class="erf-card-list" id="erf-card-list">' + cardRows + '</div>';
 
   // Session-Übersicht
-  const sessionItems = erf.session.map((e, i) =>
-    '<div class="erf-session-item">' +
-      '<div class="erf-session-item-name">' + esc(e.name) + '</div>' +
-      '<div class="erf-session-item-detail">' + (e.foilType==='rainbow'?'Rainbow Foil':e.foilType==='cold'?'Cold Foil':'') + '</div>' +
-      '<div class="erf-session-item-badge">+' + e.qty + '</div>' +
+  const sessionItems = erf.session.map((e, i) => {
+    const foilLabel = e.foilType==='rainbow'?'Rainbow Foil':e.foilType==='cold'?'Cold Foil':'';
+    return '<div class="erf-session-item">' +
+      '<div class="erf-session-item-qty">+' + e.qty + '</div>' +
+      '<div class="erf-session-item-body">' +
+        '<div class="erf-session-item-name">' + esc(e.name) + '</div>' +
+        (foilLabel ? '<div class="erf-session-item-detail">' + foilLabel + '</div>' : '') +
+      '</div>' +
       '<div class="erf-session-item-del" onclick="erfRemove(' + i + ')" role="button" aria-label="Entfernen">✕</div>' +
-    '</div>'
-  ).join('');
+    '</div>';
+  }).join('');
 
   const sessionRightContent = erf.session.length > 0
     ? '<div class="erf-session-header">' +
