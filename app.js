@@ -150,6 +150,7 @@ const RARITY_COLOR = {
   'Promo':      'var(--promo)',
 };
 function rarityColor(r) { return RARITY_COLOR[r] || 'var(--text-dim)'; }
+const SINGLE_RARITAETEN = new Set(Object.keys(RARITY_COLOR));
 
 // ════════════════════════════════════════════════════════
 //  STATE
@@ -222,9 +223,10 @@ function loadFile(file, type) {
     if (err) { dz.classList.add('errored'); st.className='dz-status err'; st.textContent=err; return; }
     dz.classList.add('loaded');
     st.className='dz-status ok';
-    st.textContent = '✓ ' + file.name + '  (' + parsed.data.length.toLocaleString('de') + ' Zeilen)';
     if (type==='karten') {
-      S.kartenCSV = parsed.data;
+      const singles = parsed.data.filter(r => SINGLE_RARITAETEN.has(r.rarity));
+      st.textContent = '✓ ' + file.name + '  (' + singles.length.toLocaleString('de') + ' Singles von ' + parsed.data.length.toLocaleString('de') + ' Zeilen)';
+      S.kartenCSV = singles;
       // Kartenliste im localStorage cachen
       try {
         const meta = { name: file.name, rows: parsed.data.length, ts: Date.now() };
@@ -233,6 +235,7 @@ function loadFile(file, type) {
         renderCacheInfo();
       } catch(e) { /* localStorage voll oder deaktiviert */ }
     } else {
+      st.textContent = '✓ ' + file.name + '  (' + parsed.data.length.toLocaleString('de') + ' Zeilen)';
       // Differenzbericht: altes Inventar mit neuem vergleichen
       if (S.invCSV && S.kartenCSV) {
         berechneDiff(S.invCSV, parsed.data);
@@ -269,7 +272,8 @@ function ladeKartenAusCache() {
     const parsed = Papa.parse(csv, { header:true, skipEmptyLines:true });
     if (!parsed.data[0]?.expansion) return false;
 
-    S.kartenCSV = parsed.data;
+    const singles = parsed.data.filter(r => SINGLE_RARITAETEN.has(r.rarity));
+    S.kartenCSV = singles;
 
     // Drop-Zone als geladen markieren
     const dz = document.getElementById('dz-karten');
@@ -277,7 +281,7 @@ function ladeKartenAusCache() {
     if (dz) dz.classList.add('loaded');
     if (st) {
       st.className = 'dz-status ok';
-      st.textContent = '✓ ' + meta.name + '  (' + parsed.data.length.toLocaleString('de') + ' Zeilen)';
+      st.textContent = '✓ ' + meta.name + '  (' + singles.length.toLocaleString('de') + ' Singles von ' + parsed.data.length.toLocaleString('de') + ' Zeilen)';
     }
     document.getElementById('btn-run').disabled = !(S.kartenCSV && S.invCSV);
     if (S.kartenCSV && S.invCSV) { try { localStorage.removeItem('fab_result'); localStorage.removeItem('fab_result_ts'); } catch(e) {} }
