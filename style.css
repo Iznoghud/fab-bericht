@@ -162,13 +162,18 @@ body::before {
 .ftog {
   padding: 4px 10px; border-radius: 4px;
   font-family: var(--font-display); font-size: .8125rem; font-weight: 600; letter-spacing: .04em;
-  border: 1px solid var(--border); background: var(--bg); color: var(--text-muted);
+  border: 1px solid color-mix(in srgb, var(--fcol, var(--gold)) 38%, var(--border));
+  background: transparent;
+  color: color-mix(in srgb, var(--fcol, var(--gold)) 52%, var(--text-muted));
   cursor: pointer; transition: all .15s;
   min-height: 28px;
 }
-.ftog:hover { border-color: var(--border-lit); color: var(--text); }
+.ftog:hover {
+  border-color: var(--fcol, var(--gold));
+  color: var(--fcol, var(--gold));
+}
 .ftog.on {
-  background: color-mix(in srgb, var(--fcol, var(--gold)) 15%, transparent);
+  background: color-mix(in srgb, var(--fcol, var(--gold)) 28%, transparent);
   border-color: var(--fcol, var(--gold));
   color: var(--fcol, var(--gold));
 }
@@ -246,6 +251,13 @@ header::after {
   letter-spacing: .06em;
   flex-shrink: 0;
 }
+.sidebar-toggle {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text-muted); padding: 4px 10px; cursor: pointer;
+  font-size: 1rem; line-height: 1; flex-shrink: 0;
+  transition: border-color .15s, color .15s;
+}
+.sidebar-toggle:hover { border-color: var(--gold); color: var(--gold); }
 
 /* ══════════════════════════════════════════════
    LAYOUT
@@ -255,6 +267,10 @@ header::after {
   display: grid;
   grid-template-columns: 360px 1fr;
   height: calc(100dvh - 72px);
+  transition: grid-template-columns .25s ease;
+}
+.app.sidebar-collapsed {
+  grid-template-columns: 0px 1fr;
 }
 
 /* ══════════════════════════════════════════════
@@ -266,6 +282,13 @@ header::after {
   padding: 24px 20px;
   display: flex; flex-direction: column; gap: 24px;
   overflow-y: auto;
+  min-width: 0;
+  transition: padding .25s ease;
+}
+.app.sidebar-collapsed .sidebar {
+  overflow: hidden;
+  padding: 0;
+  border-right: none;
 }
 
 .section-heading {

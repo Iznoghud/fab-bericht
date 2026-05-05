@@ -654,6 +654,12 @@ function runAnalyse() {
       + hauptsets.size + ' Hauptsets · ' + anderesets.size + ' andere Produkte' + preisHinweis;
     document.getElementById('btn-run').disabled = true;
     render();
+    // Sidebar nach Analyse einklappen (Desktop)
+    if (window.innerWidth > 768) {
+      const appEl = document.querySelector('.app');
+      const btn   = document.getElementById('sidebar-toggle');
+      if (appEl) { appEl.classList.add('sidebar-collapsed'); if (btn) btn.textContent = '☰'; }
+    }
   } catch(err) {
     sm.className = 'status-msg err';
     sm.textContent = '✗ Fehler: ' + err.message;
@@ -886,21 +892,27 @@ function toggleEinstellungen() {
 }
 
 function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  const btn = document.getElementById('sidebar-toggle');
+  const sb    = document.getElementById('sidebar');
+  const btn   = document.getElementById('sidebar-toggle');
+  const appEl = document.querySelector('.app');
   if (!sb) return;
-  const open = sb.classList.toggle('sidebar-open');
-  if (btn) btn.textContent = open ? '✕' : '⚙️';
+  if (window.innerWidth <= 768) {
+    const open = sb.classList.toggle('sidebar-open');
+    if (btn) btn.textContent = open ? '✕' : '☰';
+  } else {
+    const collapsed = appEl.classList.toggle('sidebar-collapsed');
+    if (btn) btn.textContent = collapsed ? '☰' : '✕';
+  }
 }
 function initMobileUI() {
-  if (window.innerWidth > 768) return;
+  const sb  = document.getElementById('sidebar');
   const btn = document.getElementById('sidebar-toggle');
-  if (btn) btn.style.display = '';
-  const sb = document.getElementById('sidebar');
   if (!sb) return;
-  // Sidebar: offen wenn noch keine Analyse, danach immer eingeklappt
-  if (S.result) sb.classList.remove('sidebar-open');
-  else if (!sb.classList.contains('sidebar-open')) sb.classList.add('sidebar-open');
+  if (window.innerWidth <= 768) {
+    if (S.result) sb.classList.remove('sidebar-open');
+    else if (!sb.classList.contains('sidebar-open')) sb.classList.add('sidebar-open');
+    if (btn) btn.textContent = sb.classList.contains('sidebar-open') ? '✕' : '☰';
+  }
 }
 
 function wechseSektion(sek) {
@@ -1225,7 +1237,7 @@ function renderWantsPanel() {
       '<input class="erf-exp-search" id="wants-exp-input" type="text" placeholder="Expansion suchen…" ' +
         'value="' + esc(displayVal) + '" ' +
         'oninput="wantsExpSearch(this.value)" ' +
-        'onfocus="wantsExpOpen()" ' +
+        'onfocus="this.select();wantsExpOpen()" ' +
         'onkeydown="wantsExpKey(event)"' +
         ' aria-label="Expansion suchen">' +
       (displayVal ? '<button class="erf-exp-clear" onclick="wantsExpClear()" tabindex="-1">✕</button>' : '') +
@@ -1239,8 +1251,8 @@ function renderWantsPanel() {
     '<div class="erf-filter-bar">' +
       '<span class="erf-filter-label">Foil</span>' +
       '<button class="ftog' + (filt.regular?' on':'') + '" onclick="wantsToggleFilter(\'regular\')" style="--fcol:var(--text)">Regular</button>' +
-      '<button class="ftog' + (filt.rainbow?' on':'') + ' foil-rf" onclick="wantsToggleFilter(\'rainbow\')" style="--fcol:#b07fd4">RF</button>' +
-      '<button class="ftog' + (filt.cold?' on':'') + ' foil-cf" onclick="wantsToggleFilter(\'cold\')" style="--fcol:#5b9bd5">CF</button>' +
+      '<button class="ftog' + (filt.rainbow?' on':'') + ' foil-rf" onclick="wantsToggleFilter(\'rainbow\')" style="--fcol:#b07fd4">Rainbow Foil</button>' +
+      '<button class="ftog' + (filt.cold?' on':'') + ' foil-cf" onclick="wantsToggleFilter(\'cold\')" style="--fcol:#5b9bd5">Cold Foil</button>' +
     '</div>' +
     '<div class="erf-filter-bar">' +
       '<span class="erf-filter-label">Rarität</span>' +
@@ -1693,7 +1705,7 @@ function renderScanPanel() {
 
           // Kommentar (auto-save bei Verlassen)
           '<div class="erf-inline-row">' +
-            '<span class="erf-inline-label">Notiz</span>' +
+            '<span class="erf-inline-label">Kommentar</span>' +
             '<input class="erf-comment" type="text" placeholder="optional…" value="' + esc(comment) + '"' +
               ' id="eco-' + cid + '" oninput="erfSetComment(\'' + cid + '\',this.value)"' +
               ' onblur="erfAutoSave(\'' + cid + '\')">' +
@@ -1760,7 +1772,7 @@ function renderScanPanel() {
             '<input class="erf-exp-search" type="text" placeholder="Expansion suchen…" ' +
               'value="' + esc(displayVal) + '" ' +
               'oninput="erfExpSearch(this.value)" ' +
-              'onfocus="erfExpOpen()" ' +
+              'onfocus="this.select();erfExpOpen()" ' +
               'onkeydown="erfExpKey(event)"' +
               ' aria-label="Expansion suchen">' +
             (displayVal ? '<button class="erf-exp-clear" onclick="erfExpClear()" tabindex="-1">✕</button>' : '') +
