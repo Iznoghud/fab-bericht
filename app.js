@@ -180,7 +180,7 @@ const S = {
   sortCol:     'fehlend_gesamt', sortDir:    -1,
   cardSortCol: 'name',           cardSortDir: 1,
   wants: { expansion: null, expSearch: '', expOpen: false, session: [], openCard: null, search: '', filter: { regular: true, rainbow: false, cold: false, Token: true, Common: true, Rare: true, Majestic: false, Super_Rare: false, Legendary: false, Fabled: false, Marvel: false, Promo: false } },
-  erf: { expansion: null, expSearch: '', expOpen: false, session: [], openCard: null, search: '', defaultLanguage: 'English', filter: { regular: true, rainbow: false, cold: false, "Token": true, "Common": true, "Rare": true, "Majestic": false, "Super_Rare": false, "Legendary": false, "Fabled": false, "Marvel": false, "Promo": false } },  // Kartenerfassung
+  erf: { expansion: null, expSearch: '', expOpen: false, session: [], openCard: null, search: '', defaultLanguage: 'English', defaultComment: '', filter: { regular: true, rainbow: false, cold: false, "Token": true, "Common": true, "Rare": true, "Majestic": false, "Super_Rare": false, "Legendary": false, "Fabled": false, "Marvel": false, "Promo": false } },  // Kartenerfassung
   diff: null,   // Differenzbericht: { ts, items: [{id, name, rarity, expansion, altQty, neuQty, delta}] }
   diffSortCol: 'delta', diffSortDir: -1,
   // Diff-eigene Filter — alle default true
@@ -1602,6 +1602,16 @@ function renderScanPanel() {
       '<button class="ftog' + (filt["Promo"]!==false?' on':'') + '" onclick="erfToggleFilter(\'Promo\')" style="--fcol:' + (RARITY_COLOR["Promo"]||'var(--text-dim)') + '">Promo</button>' +
     '</div>';
 
+  // Standardkommentar
+  const defaultCommentRow = erf.expansion
+    ? '<div class="erf-default-comment-row">' +
+        '<span class="erf-inline-label">Standardkommentar</span>' +
+        '<input class="erf-comment" type="text" placeholder="Gilt für alle neu hinzugefügten Karten…" ' +
+          'value="' + esc(erf.defaultComment||'') + '" ' +
+          'oninput="S.erf.defaultComment=this.value">' +
+      '</div>'
+    : '';
+
   // Suchleiste
   const searchBar = erf.expansion
     ? '<div style="position:relative;margin-bottom:10px">' +
@@ -1761,6 +1771,7 @@ function renderScanPanel() {
         })()
       : '<p style="color:var(--text-muted);font-size:.9rem;padding:12px 0">Bitte zuerst Kartenliste + Inventar laden und Analyse starten.</p>') +
     statsHtml +
+    defaultCommentRow +
     (erf.expansion ? filterBar : '') +
     searchBar +
     listHtml +
@@ -2022,7 +2033,7 @@ function erfGetOrCreateEntry(cid) {
       expansion: card.expansion||S.erf.expansion,
       setCode: card.setCode||'', cn: card.cn||'',
       rarity: card.rarity, foilType: card.foilType||'none',
-      qty: 0, condition: 'NM', language: S.erf.defaultLanguage, comment: '',
+      qty: 0, condition: 'NM', language: S.erf.defaultLanguage, comment: S.erf.defaultComment,
       nameDE: card.nameDE||card.name, nameES: card.nameES||card.name,
       nameFR: card.nameFR||card.name, nameIT: card.nameIT||card.name,
     };
