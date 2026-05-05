@@ -334,7 +334,7 @@ function clearKartenCache() {
 const LS_INV_META = 'fab_inv_meta';
 const LS_INV_CSV  = 'fab_inv_csv';
 
-const PREIS_BASE_URL = 'https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_';
+const PREIS_URL = 'https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_16.json';
 const LS_PREIS_META  = 'fab_preis_meta';
 const LS_PREIS_MAP   = 'fab_preis_map';
 
@@ -424,12 +424,6 @@ function ladePreisAusCache() {
   } catch(e) {}
 }
 
-function schaetzeStartN() {
-  const start = new Date('2026-01-05');
-  const wochen = Math.ceil((Date.now() - start) / (7 * 86400000));
-  return wochen + 5;
-}
-
 function getPreis(cardmarketId, foilType) {
   if (!S.preisMap) return null;
   const entry = S.preisMap.get(Number(cardmarketId));
@@ -444,28 +438,25 @@ function formatPreis(p) {
 }
 
 async function fetchNeuestePreisliste() {
-  const meta   = JSON.parse(localStorage.getItem(LS_PREIS_META) || 'null');
-  const startN = meta ? meta.n + 2 : schaetzeStartN();
+  try {
+    const res = await fetch(PREIS_URL);
+    if (!res.ok) return { neu: false };
+    const json = await res.json();
+    if (!json?.priceGuides) return { neu: false };
 
-  for (let n = startN; n >= Math.max(1, startN - 15); n--) {
+    const datum = new Date(json.createdAt).toLocaleDateString('de-DE');
+    const meta  = JSON.parse(localStorage.getItem(LS_PREIS_META) || 'null');
+    if (meta?.datum === datum && S.preisMap) return { neu: false, datum };
+
+    S.preisMap = new Map(
+      json.priceGuides.map(e => [e.idProduct, { t: e.trend, tf: e['trend-foil'] }])
+    );
     try {
-      const res = await fetch(PREIS_BASE_URL + n + '.json');
-      if (!res.ok) continue;
-      const json = await res.json();
-      if (!json?.priceGuides) continue;
-
-      S.preisMap = new Map(
-        json.priceGuides.map(e => [e.idProduct, { t: e.trend, tf: e['trend-foil'] }])
-      );
-      const datum = new Date(json.createdAt).toLocaleDateString('de-DE');
-      try {
-        localStorage.setItem(LS_PREIS_META, JSON.stringify({ n, datum, ts: Date.now() }));
-        localStorage.setItem(LS_PREIS_MAP,  JSON.stringify([...S.preisMap]));
-      } catch(e) {}
-      return { neu: true, n, datum };
-    } catch(e) { continue; }
-  }
-  return { neu: false };
+      localStorage.setItem(LS_PREIS_META, JSON.stringify({ datum, ts: Date.now() }));
+      localStorage.setItem(LS_PREIS_MAP,  JSON.stringify([...S.preisMap]));
+    } catch(e) {}
+    return { neu: true, datum };
+  } catch(e) { return { neu: false }; }
 }
 
 // Cache beim Seitenstart laden
