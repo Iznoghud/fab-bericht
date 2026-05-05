@@ -801,8 +801,20 @@ function renderStartGuide() {
             stepStatus(invOk, invMeta) +
           '</div>' +
         '</div>' +
+        '<div class="guide-step' + (S.preisMap ? ' done' : '') + '" style="opacity:.75">' +
+          '<div class="guide-num" style="background:var(--text-muted)">3</div>' +
+          '<div class="guide-body">' +
+            '<div class="guide-step-title">Preisliste laden <span style="font-size:.7rem;color:var(--text-muted);font-weight:400">(optional)</span></div>' +
+            '<div class="guide-step-hint">Cardmarket Price Guide JSON für Trendpreise · ' +
+              '<a href="https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_16.json" download="price_guide_16.json" style="color:var(--gold-light)" onclick="event.stopPropagation()">Herunterladen</a>' +
+            '</div>' +
+            (S.preisMap
+              ? ('<span class="guide-status done">✓ Preisliste geladen · ' + (JSON.parse(localStorage.getItem(LS_PREIS_META)||'{}').datum || '') + '</span>')
+              : '<span class="guide-status pending">JSON in der Sidebar hochladen</span>') +
+          '</div>' +
+        '</div>' +
         '<div class="guide-step' + (bereit ? ' active' : '') + '">' +
-          '<div class="guide-num">3</div>' +
+          '<div class="guide-num">4</div>' +
           '<div class="guide-body">' +
             '<div class="guide-step-title">Analyse starten</div>' +
             '<div class="guide-step-hint">Vergleicht Inventar mit der Kartenliste und zeigt Fehlmengen</div>' +
@@ -1622,10 +1634,10 @@ function renderScanPanel() {
           '<div class="erf-card-meta">' +
             '<span style="color:' + rarityColor(card.rarity) + '">' + esc(card.rarity) + '</span>' +
             '<span>Im Inventar: <span class="erf-card-meta-inv' + (invZero?' zero':'') + '">' + card.im_inv + '</span></span>' +
-            (S.preisMap ? '<span style="color:var(--text-muted)">Trend: <span style="color:var(--gold-light);font-weight:600">' + formatPreis(preis) + '</span></span>' : '') +
           '</div>' +
         '</div>' +
         '<div class="erf-card-right">' +
+          (S.preisMap ? '<span style="color:var(--gold-light);font-size:.75rem;font-weight:600;min-width:52px;text-align:right">' + formatPreis(preis) + '</span>' : '') +
           '<span class="erf-card-fehlend-pill' + (card.fehlend>0?' red':'') + '">−' + card.fehlend + '</span>' +
           (addQty>0 ? '<div class="erf-add-badge">+'+addQty+'</div>' : '') +
           '<span class="erf-expand-icon">▼</span>' +
@@ -1927,6 +1939,7 @@ function erfSearch(val) {
     const addQty = entry ? entry.qty : 0;
     const foilStr = card.foilType==='rainbow' ? '🟣 RF' : card.foilType==='cold' ? '🔵 CF' : '';
     const invZero = card.im_inv === 0;
+    const preis2 = getPreis(card.cardmarketId, card.foilType);
     const head =
       '<div class="erf-card-head" onclick="erfToggleCard(\'' + cid + '\')">' +
         '<div>' +
@@ -1937,6 +1950,7 @@ function erfSearch(val) {
           '</div>' +
         '</div>' +
         '<div class="erf-card-right">' +
+          (S.preisMap ? '<span style="color:var(--gold-light);font-size:.75rem;font-weight:600;min-width:52px;text-align:right">' + formatPreis(preis2) + '</span>' : '') +
           '<span class="erf-card-fehlend-pill' + (card.fehlend>0?' red':'') + '">−' + card.fehlend + '</span>' +
           (addQty>0 ? '<div class="erf-add-badge">+'+addQty+'</div>' : '') +
           '<span class="erf-expand-icon">▼</span>' +
