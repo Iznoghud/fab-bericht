@@ -205,7 +205,10 @@ header {
   background: var(--bg-deep);
   border-bottom: 1px solid var(--gold-dim);
   padding: 0 32px;
-  display: flex; align-items: center; gap: 20px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
   height: 72px;
   box-shadow: 0 2px 20px rgba(0,0,0,.5);
 }
@@ -215,6 +218,14 @@ header::after {
   position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
   opacity: .5;
+}
+
+.header-left {
+  display: flex; align-items: center; gap: 16px;
+}
+.header-center { text-align: center; }
+.header-right {
+  display: flex; align-items: center; justify-content: flex-end;
 }
 
 .header-emblem {
@@ -244,12 +255,10 @@ header::after {
 }
 
 .header-version {
-  margin-left: auto;
   font-family: var(--font-mono);
   font-size: .75rem;
   color: var(--gold-dim);
   letter-spacing: .06em;
-  flex-shrink: 0;
 }
 .sidebar-toggle {
   background: none; border: 1px solid var(--border); border-radius: 6px;
@@ -1115,6 +1124,50 @@ td.num {
 /* Kartenliste */
 .erf-card-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 
+/* ── Split-Panel (Kartenerfassung + Wantsliste) ── */
+.erf-split {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 0;
+  align-items: start;
+}
+.erf-left {
+  border-right: 1px solid var(--border);
+  padding-right: 24px;
+}
+.erf-right {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100dvh - 100px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: none;
+  padding-left: 24px;
+}
+.erf-right-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 60px;
+}
+.erf-right .erf-sticky-export,
+.erf-right .wants-sticky {
+  position: static;
+  margin-top: 8px;
+  padding: 10px 0 0;
+}
+.erf-right-empty {
+  color: var(--text-muted);
+  font-size: .85rem;
+  text-align: center;
+  padding: 24px 12px;
+}
+@media (max-width: 768px) {
+  .erf-split { grid-template-columns: 1fr; }
+  .erf-left { border-right: none; padding-right: 0; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px; }
+  .erf-right { position: static; max-height: none; padding-left: 0; }
+}
+
 /* Karten-Zeile — expandierbar */
 .erf-card-row {
   background: var(--surface);
@@ -1239,7 +1292,7 @@ td.num {
 }
 .erf-session-title { font-family: var(--font-display); font-size: .8rem; color: var(--gold); letter-spacing: .06em; text-transform: uppercase; }
 .erf-session-count { font-size: .75rem; color: var(--text-muted); }
-.erf-session-list   { display: flex; flex-direction: column; gap: 2px; max-height: 240px; overflow-y: auto; margin-bottom: 10px; }
+.erf-session-list   { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
 .erf-session-item {
   display: flex; align-items: center; gap: 8px;
   padding: 7px 10px;

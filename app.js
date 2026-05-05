@@ -1341,13 +1341,13 @@ function renderWantsPanel() {
     '</div>';
   }).join('');
 
-  const sessionHtml = w.session.length > 0
+  const wantsRightContent = w.session.length > 0
     ? '<div class="erf-session-header">' +
         '<span class="erf-session-title">Vorschau</span>' +
         '<span class="erf-session-count">' + w.session.length + ' Einträge</span>' +
       '</div>' +
       '<div class="erf-session-list">' + sessionItems + '</div>'
-    : '';
+    : '<p class="erf-right-empty">Noch keine Karten auf der Liste</p>';
 
   const stickyBtn =
     '<div class="wants-sticky">' +
@@ -1358,12 +1358,18 @@ function renderWantsPanel() {
     '</div>';
 
   return '<div id="wants-panel">' +
-    (S.result ? expInput : '<p style="color:var(--text-muted);font-size:.9rem;padding:12px 0">Bitte zuerst Analyse starten.</p>') +
-    (w.expansion ? filterBar : '') +
-    searchBar +
-    listHtml +
-    sessionHtml +
-    stickyBtn +
+    '<div class="erf-split">' +
+      '<div class="erf-left">' +
+        (S.result ? expInput : '<p style="color:var(--text-muted);font-size:.9rem;padding:12px 0">Bitte zuerst Analyse starten.</p>') +
+        (w.expansion ? filterBar : '') +
+        searchBar +
+        listHtml +
+      '</div>' +
+      '<div class="erf-right">' +
+        '<div class="erf-right-scroll">' + wantsRightContent + '</div>' +
+        stickyBtn +
+      '</div>' +
+    '</div>' +
   '</div>';
 }
 
@@ -1732,14 +1738,14 @@ function renderScanPanel() {
     '</div>'
   ).join('');
 
-  const sessionListHtml = erf.session.length > 0
+  const sessionRightContent = erf.session.length > 0
     ? '<div class="erf-session-header">' +
         '<span class="erf-session-title">Session</span>' +
         '<span class="erf-session-count">' + erf.session.length + ' Einträge</span>' +
       '</div>' +
       '<div class="erf-session-list">' + sessionItems + '</div>'
-    : '';
-  // Export-Button immer sticky sichtbar
+    : '<p class="erf-right-empty">Noch keine Karten erfasst</p>';
+
   const stickyExport =
     '<div class="erf-sticky-export">' +
       '<button class="btn-primary erf-export-btn" onclick="erfExportCSV()">' +
@@ -1747,48 +1753,56 @@ function renderScanPanel() {
       '</button>' +
     '</div>';
 
+  const expSelector = S.result
+    ? (function() {
+        const expQ    = erf.expSearch || '';
+        const expQlo  = expQ.toLowerCase();
+        const matched = expQ
+          ? allExp.filter(e => e.toLowerCase().startsWith(expQlo))
+          : allExp;
+        const displayVal = erf.expansion
+          ? (expQ ? expQ : erf.expansion)
+          : expQ;
+        const optHtml = matched.map(exp => {
+          const sel = exp === erf.expansion;
+          const hi  = expQ
+            ? '<mark>' + esc(exp.slice(0, expQ.length)) + '</mark>' + esc(exp.slice(expQ.length))
+            : esc(exp);
+          return '<div class="erf-exp-option' + (sel?' selected':'') + '" onclick="erfPickExpansion(\'' + exp.replace(/'/g,"\\'") + '\')">' + hi + '</div>';
+        }).join('');
+        const noMatch = matched.length === 0
+          ? '<div style="padding:12px;color:var(--text-muted);font-size:.85rem;text-align:center">Keine Treffer</div>'
+          : '';
+        return '<div class="erf-exp-search-wrap">' +
+          '<input class="erf-exp-search" type="text" placeholder="Expansion suchen…" ' +
+            'value="' + esc(displayVal) + '" ' +
+            'oninput="erfExpSearch(this.value)" ' +
+            'onfocus="this.select();erfExpOpen()" ' +
+            'onkeydown="erfExpKey(event)"' +
+            ' aria-label="Expansion suchen">' +
+          (displayVal ? '<button class="erf-exp-clear" onclick="erfExpClear()" tabindex="-1">✕</button>' : '') +
+          (erf.expOpen && (matched.length > 0 || expQ)
+            ? '<div class="erf-exp-dropdown" id="erf-exp-dd">' + optHtml + noMatch + '</div>'
+            : '') +
+        '</div>';
+      })()
+    : '<p style="color:var(--text-muted);font-size:.9rem;padding:12px 0">Bitte zuerst Kartenliste + Inventar laden und Analyse starten.</p>';
+
   return '<div id="erf-panel">' +
-    (S.result
-      ? (function() {
-          const expQ    = erf.expSearch || '';
-          const expQlo  = expQ.toLowerCase();
-          const matched = expQ
-            ? allExp.filter(e => e.toLowerCase().startsWith(expQlo))
-            : allExp;
-          const displayVal = erf.expansion
-            ? (expQ ? expQ : erf.expansion)
-            : expQ;
-          const optHtml = matched.map(exp => {
-            const sel = exp === erf.expansion;
-            const hi  = expQ
-              ? '<mark>' + esc(exp.slice(0, expQ.length)) + '</mark>' + esc(exp.slice(expQ.length))
-              : esc(exp);
-            return '<div class="erf-exp-option' + (sel?' selected':'') + '" onclick="erfPickExpansion(\'' + exp.replace(/'/g,"\\'") + '\')">' + hi + '</div>';
-          }).join('');
-          const noMatch = matched.length === 0
-            ? '<div style="padding:12px;color:var(--text-muted);font-size:.85rem;text-align:center">Keine Treffer</div>'
-            : '';
-          return '<div class="erf-exp-search-wrap">' +
-            '<input class="erf-exp-search" type="text" placeholder="Expansion suchen…" ' +
-              'value="' + esc(displayVal) + '" ' +
-              'oninput="erfExpSearch(this.value)" ' +
-              'onfocus="this.select();erfExpOpen()" ' +
-              'onkeydown="erfExpKey(event)"' +
-              ' aria-label="Expansion suchen">' +
-            (displayVal ? '<button class="erf-exp-clear" onclick="erfExpClear()" tabindex="-1">✕</button>' : '') +
-            (erf.expOpen && (matched.length > 0 || expQ)
-              ? '<div class="erf-exp-dropdown" id="erf-exp-dd">' + optHtml + noMatch + '</div>'
-              : '') +
-          '</div>';
-        })()
-      : '<p style="color:var(--text-muted);font-size:.9rem;padding:12px 0">Bitte zuerst Kartenliste + Inventar laden und Analyse starten.</p>') +
-    statsHtml +
-    defaultCommentRow +
-    (erf.expansion ? filterBar : '') +
-    searchBar +
-    listHtml +
-    sessionListHtml +
-    stickyExport +
+    '<div class="erf-split">' +
+      '<div class="erf-left">' +
+        expSelector +
+        statsHtml +
+        defaultCommentRow +
+        (erf.expansion ? filterBar : '') +
+        searchBar +
+        listHtml +
+      '</div>' +
+      '<div class="erf-right">' +
+        '<div class="erf-right-scroll">' + sessionRightContent + '</div>' +
+        stickyExport +
+      '</div>' +
+    '</div>' +
   '</div>';
 }
 
