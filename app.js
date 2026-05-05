@@ -1276,7 +1276,7 @@ function renderWantsPanel() {
   // Kartenliste
   const cardRows = filtered.map(card => {
     const cid    = card.cardmarketId + '_' + (card.foilType||'none');
-    const entry  = w.session.find(e => String(e.cardId)===String(card.cardmarketId) && (e.foilType||'none')===(card.foilType||'none'));
+    const entry  = w.session.find(e => String(e.cardId)===String(card.cardmarketId));
     const addQty = entry ? entry.qty : 0;
     const isOpen = w.openCard === cid;
     const foilStr = card.foilType==='rainbow' ? '🟣 RF' : card.foilType==='cold' ? '🔵 CF' : '';
@@ -1330,8 +1330,7 @@ function renderWantsPanel() {
 
   // Session-Übersicht
   const sessionItems = w.session.map((e, i) => {
-    const mehrFarben = hatMehrereFarben(e.name);
-    const suffix = mehrFarben ? pitchSuffix(e.name) : '';
+    const suffix = pitchSuffix(e.name);
     const baseName = cleanCardName(e.name);
     return '<div class="erf-session-item">' +
       '<div class="erf-session-item-qty">×' + e.qty + '</div>' +
@@ -1380,7 +1379,7 @@ function wantsGetOrCreate(cid) {
   const sep    = cid.lastIndexOf('_');
   const cardId = cid.slice(0, sep);
   const ft     = cid.slice(sep + 1);
-  let entry = S.wants.session.find(e => String(e.cardId)===cardId && (e.foilType||'none')===ft);
+  let entry = S.wants.session.find(e => String(e.cardId)===cardId);
   if (!entry) {
     let card = null;
     if (S.result) {
@@ -1393,7 +1392,7 @@ function wantsGetOrCreate(cid) {
       });
     }
     if (!card) return null;
-    entry = { cardId: card.cardmarketId, name: card.name, foilType: card.foilType||'none', qty: 0, fehlend: card.fehlend };
+    entry = { cardId: card.cardmarketId, name: card.name, foilType: 'none', qty: 0, fehlend: card.fehlend };
     S.wants.session.push(entry);
   }
   return entry;
@@ -1497,8 +1496,7 @@ function wantsCopyToClipboard() {
     return;
   }
   const lines = S.wants.session.map(e => {
-    const mehrFarben = hatMehrereFarben(e.name);
-    const suffix = mehrFarben ? pitchSuffix(e.name) : '';
+    const suffix = pitchSuffix(e.name);
     const baseName = cleanCardName(e.name);
     return e.qty + ' ' + baseName + suffix;
   }).join('\n');
