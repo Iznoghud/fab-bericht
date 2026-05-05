@@ -1333,12 +1333,10 @@ function renderWantsPanel() {
     const mehrFarben = hatMehrereFarben(e.name);
     const suffix = mehrFarben ? pitchSuffix(e.name) : '';
     const baseName = cleanCardName(e.name);
-    const foilLabel = e.foilType==='rainbow'?'Rainbow Foil':e.foilType==='cold'?'Cold Foil':'';
     return '<div class="erf-session-item">' +
       '<div class="erf-session-item-qty">×' + e.qty + '</div>' +
       '<div class="erf-session-item-body">' +
         '<div class="erf-session-item-name" style="font-family:var(--font-mono);font-size:.8rem">' + esc(baseName + suffix) + '</div>' +
-        (foilLabel ? '<div class="erf-session-item-detail">' + foilLabel + '</div>' : '') +
       '</div>' +
       '<div class="erf-session-item-del" onclick="wantsRemove(' + i + ')" role="button">✕</div>' +
     '</div>';
