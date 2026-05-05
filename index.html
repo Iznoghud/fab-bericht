@@ -21,7 +21,7 @@
     <h1>Flesh &amp; Blood — Inventar-Bericht</h1>
     <p>Bestandsanalyse · läuft vollständig lokal im Browser · keine Daten werden übertragen</p>
   </div>
-  <span class="header-version">v1.2.9 · 05.05.2026 13:07</span>
+  <span class="header-version">v1.2.8 · 05.05.2026 13:04</span>
   <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Einstellungen" style="display:none">⚙️</button>
 </header>
 
@@ -94,15 +94,15 @@
         <div class="dz-inner">
           <span class="dz-icon" aria-hidden="true">💰</span>
           <div class="dz-title">Preisliste</div>
-          <div class="dz-hint">Cardmarket Price Guide JSON<br>hierher ziehen oder klicken</div>
+          <div class="dz-hint">Cardmarket Price Guide JSON<br>
+            <a href="https://www.cardmarket.com/en/FleshAndBlood/Data/Price-Guide"
+               target="_blank" rel="noopener"
+               onclick="event.stopPropagation()"
+               style="color:var(--gold-light);font-size:.75rem">↗ Herunterladen</a>
+          </div>
           <div class="dz-status" id="st-preis" role="status" aria-live="polite"></div>
         </div>
       </div>
-      <a href="https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_16.json"
-         download="price_guide_16.json"
-         style="display:block;margin-top:6px;font-size:.78rem;color:var(--gold-light);text-decoration:underline;text-align:center">
-        Hier die aktuellste Preisliste herunterladen
-      </a>
 
       </div>    </section>
 
