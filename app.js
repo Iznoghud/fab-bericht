@@ -156,7 +156,7 @@ const SINGLE_RARITAETEN = new Set(Object.keys(RARITY_COLOR));
 //  STATE
 // ════════════════════════════════════════════════════════
 const S = {
-  kartenCSV: null, invCSV: null, result: null,
+  kartenCSV: null, invCSV: null, result: null, preisMap: null,
   sektion:    'haupt',
   tab:        { haupt:'ranking', andere:'ranking' },
   activeSet:  { haupt:null,      andere:null      },
@@ -334,6 +334,10 @@ function clearKartenCache() {
 const LS_INV_META = 'fab_inv_meta';
 const LS_INV_CSV  = 'fab_inv_csv';
 
+const PREIS_BASE_URL = 'https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_';
+const LS_PREIS_META  = 'fab_preis_meta';
+const LS_PREIS_MAP   = 'fab_preis_map';
+
 function ladeInvAusCache() {
   try {
     const meta = JSON.parse(localStorage.getItem(LS_INV_META) || 'null');
@@ -408,10 +412,67 @@ function clearInvCache() {
   if (!S.result) renderStartGuide();
 }
 
+// ════════════════════════════════════════════════════════
+//  PREISLISTE — automatischer Download von Cardmarket S3
+// ════════════════════════════════════════════════════════
+
+function ladePreisAusCache() {
+  try {
+    const raw = localStorage.getItem(LS_PREIS_MAP);
+    if (!raw) return;
+    S.preisMap = new Map(JSON.parse(raw));
+  } catch(e) {}
+}
+
+function schaetzeStartN() {
+  const start = new Date('2026-01-05');
+  const wochen = Math.ceil((Date.now() - start) / (7 * 86400000));
+  return wochen + 5;
+}
+
+function getPreis(cardmarketId, foilType) {
+  if (!S.preisMap) return null;
+  const entry = S.preisMap.get(Number(cardmarketId));
+  if (!entry) return null;
+  const foil = foilType === 'rainbow' || foilType === 'cold';
+  const p = foil ? (entry.tf || entry.t) : entry.t;
+  return (p != null && p > 0) ? p : null;
+}
+
+function formatPreis(p) {
+  return p == null ? '–' : '€ ' + p.toFixed(2).replace('.', ',');
+}
+
+async function fetchNeuestePreisliste() {
+  const meta   = JSON.parse(localStorage.getItem(LS_PREIS_META) || 'null');
+  const startN = meta ? meta.n + 2 : schaetzeStartN();
+
+  for (let n = startN; n >= Math.max(1, startN - 15); n--) {
+    try {
+      const res = await fetch(PREIS_BASE_URL + n + '.json');
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (!json?.priceGuides) continue;
+
+      S.preisMap = new Map(
+        json.priceGuides.map(e => [e.idProduct, { t: e.trend, tf: e['trend-foil'] }])
+      );
+      const datum = new Date(json.createdAt).toLocaleDateString('de-DE');
+      try {
+        localStorage.setItem(LS_PREIS_META, JSON.stringify({ n, datum, ts: Date.now() }));
+        localStorage.setItem(LS_PREIS_MAP,  JSON.stringify([...S.preisMap]));
+      } catch(e) {}
+      return { neu: true, n, datum };
+    } catch(e) { continue; }
+  }
+  return { neu: false };
+}
+
 // Cache beim Seitenstart laden
 (function() {
   try { ladeKartenAusCache(); } catch(e) {}
   try { ladeInvAusCache();    } catch(e) {}
+  try { ladePreisAusCache();  } catch(e) {}
   // btn-run Status nach beiden Caches aktualisieren
   document.getElementById('btn-run').disabled = !(S.kartenCSV && S.invCSV);
 
@@ -525,7 +586,7 @@ function analysiereGruppe(sets, zielMap, invMap) {
 // ════════════════════════════════════════════════════════
 //  ANALYSE — Einstiegspunkt
 // ════════════════════════════════════════════════════════
-function runAnalyse() {
+async function runAnalyse() {
   const zielMap = {};
   zielMap['Token'] = parseInt(document.getElementById('cfg-ziel-Token')?.value) || 20;
   zielMap['Common'] = parseInt(document.getElementById('cfg-ziel-Common')?.value) || 20;
@@ -536,55 +597,65 @@ function runAnalyse() {
   zielMap['Fabled'] = parseInt(document.getElementById('cfg-ziel-Fabled')?.value) || 1;
   zielMap['Marvel'] = parseInt(document.getElementById('cfg-ziel-Marvel')?.value) || 1;
   zielMap['Promo'] = parseInt(document.getElementById('cfg-ziel-Promo')?.value) || 1;
-  const sm   = document.getElementById('status-msg');
+  const sm = document.getElementById('status-msg');
   sm.className = 'status-msg running';
   sm.innerHTML = '<span class="spinner" aria-hidden="true"></span>Analysiere…';
   document.getElementById('btn-run').disabled = true;
 
-  setTimeout(() => {
-    try {
-      const alleExpansions = [...new Set(S.kartenCSV.map(r => r.expansion).filter(Boolean))];
-      const kartenProSet = new Map();
-      S.kartenCSV.forEach(r => {
-        if (!r.expansion) return;
-        if (!r.name || r.name.includes('Rainbow Foil') || r.name.includes('Cold Foil')) return;
-        kartenProSet.set(r.expansion, (kartenProSet.get(r.expansion) || 0) + 1);
-      });
-      const hauptsets  = new Set(alleExpansions.filter(s => istHauptset(s, kartenProSet)));
-      const anderesets = new Set(alleExpansions.filter(s => !istHauptset(s, kartenProSet)));
+  // Preisliste parallel im Hintergrund holen (max. 4s Wartezeit)
+  const preisPromise = Promise.race([
+    fetchNeuestePreisliste(),
+    new Promise(r => setTimeout(() => r({ neu: false, timeout: true }), 4000))
+  ]);
 
-      // Inventar summieren (inkl. Foils — alle Varianten eines cardmarketId werden summiert)
-      const invMap = new Map();
-      S.invCSV.forEach(r => {
-        const id  = parseInt(r.cardmarketId);
-        const qty = parseInt(r.quantity) || 0;
-        if (!isNaN(id)) invMap.set(id, (invMap.get(id)||0) + qty);
-      });
+  await new Promise(r => setTimeout(r, 30)); // UI-Update abwarten
 
-      const haupt  = analysiereGruppe(hauptsets,  zielMap, invMap);
-      const andere = analysiereGruppe(anderesets, zielMap, invMap);
+  try {
+    const alleExpansions = [...new Set(S.kartenCSV.map(r => r.expansion).filter(Boolean))];
+    const kartenProSet = new Map();
+    S.kartenCSV.forEach(r => {
+      if (!r.expansion) return;
+      if (!r.name || r.name.includes('Rainbow Foil') || r.name.includes('Cold Foil')) return;
+      kartenProSet.set(r.expansion, (kartenProSet.get(r.expansion) || 0) + 1);
+    });
+    const hauptsets  = new Set(alleExpansions.filter(s => istHauptset(s, kartenProSet)));
+    const anderesets = new Set(alleExpansions.filter(s => !istHauptset(s, kartenProSet)));
 
-      S.result    = { zielMap, haupt, andere };
-      buildMehrFarbenCache(); // Cache für Wantsliste
-      try { localStorage.setItem('fab_result', JSON.stringify(S.result)); localStorage.setItem('fab_result_ts', Date.now().toString()); } catch(e) {}
-      S.sektion   = 'haupt';
-      S.tab       = { haupt:'ranking', andere:'ranking' };
-      S.activeSet = { haupt:null,      andere:null      };
-      S.search    = { haupt:'',        andere:''        };
+    // Inventar summieren (inkl. Foils — alle Varianten eines cardmarketId werden summiert)
+    const invMap = new Map();
+    S.invCSV.forEach(r => {
+      const id  = parseInt(r.cardmarketId);
+      const qty = parseInt(r.quantity) || 0;
+      if (!isNaN(id)) invMap.set(id, (invMap.get(id)||0) + qty);
+    });
 
-      const gesamt = haupt.stats.gesamt + andere.stats.gesamt;
-      sm.className = 'status-msg done';
-      sm.textContent = '✓ ' + gesamt.toLocaleString('de') + ' fehlende C/R · '
-        + hauptsets.size + ' Hauptsets · ' + anderesets.size + ' andere Produkte';
-      document.getElementById('btn-run').disabled = true;
-      render();
-    } catch(err) {
-      sm.className = 'status-msg err';
-      sm.textContent = '✗ Fehler: ' + err.message;
-      document.getElementById('btn-run').disabled = false;
-      console.error(err);
-    }
-  }, 30);
+    const haupt  = analysiereGruppe(hauptsets,  zielMap, invMap);
+    const andere = analysiereGruppe(anderesets, zielMap, invMap);
+
+    S.result    = { zielMap, haupt, andere };
+    buildMehrFarbenCache(); // Cache für Wantsliste
+    try { localStorage.setItem('fab_result', JSON.stringify(S.result)); localStorage.setItem('fab_result_ts', Date.now().toString()); } catch(e) {}
+    S.sektion   = 'haupt';
+    S.tab       = { haupt:'ranking', andere:'ranking' };
+    S.activeSet = { haupt:null,      andere:null      };
+    S.search    = { haupt:'',        andere:''        };
+
+    const preisResult = await preisPromise;
+    const gesamt = haupt.stats.gesamt + andere.stats.gesamt;
+    const preisHinweis = S.preisMap
+      ? (preisResult.neu ? ' · Preise vom ' + preisResult.datum : ' · Preise gecacht')
+      : '';
+    sm.className = 'status-msg done';
+    sm.textContent = '✓ ' + gesamt.toLocaleString('de') + ' fehlende C/R · '
+      + hauptsets.size + ' Hauptsets · ' + anderesets.size + ' andere Produkte' + preisHinweis;
+    document.getElementById('btn-run').disabled = true;
+    render();
+  } catch(err) {
+    sm.className = 'status-msg err';
+    sm.textContent = '✗ Fehler: ' + err.message;
+    document.getElementById('btn-run').disabled = false;
+    console.error(err);
+  }
 }
 
 // ════════════════════════════════════════════════════════
@@ -1538,6 +1609,7 @@ function renderScanPanel() {
     const invZero = card.im_inv === 0;
 
     // Kopfzeile
+    const preis = getPreis(card.cardmarketId, card.foilType);
     const head =
       '<div class="erf-card-head" onclick="erfToggleCard(\'' + cid + '\')">' +
         '<div>' +
@@ -1545,6 +1617,7 @@ function renderScanPanel() {
           '<div class="erf-card-meta">' +
             '<span style="color:' + rarityColor(card.rarity) + '">' + esc(card.rarity) + '</span>' +
             '<span>Im Inventar: <span class="erf-card-meta-inv' + (invZero?' zero':'') + '">' + card.im_inv + '</span></span>' +
+            (S.preisMap ? '<span style="color:var(--text-muted)">Trend: <span style="color:var(--gold-light);font-weight:600">' + formatPreis(preis) + '</span></span>' : '') +
           '</div>' +
         '</div>' +
         '<div class="erf-card-right">' +
