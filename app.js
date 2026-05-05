@@ -1740,7 +1740,7 @@ function renderScanPanel() {
 
   const sessionRightContent = erf.session.length > 0
     ? '<div class="erf-session-header">' +
-        '<span class="erf-session-title">Session</span>' +
+        '<span class="erf-session-title">Vorschau</span>' +
         '<span class="erf-session-count">' + erf.session.length + ' Einträge</span>' +
       '</div>' +
       '<div class="erf-session-list">' + sessionItems + '</div>'

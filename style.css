@@ -1127,7 +1127,7 @@ td.num {
 /* ── Split-Panel (Kartenerfassung + Wantsliste) ── */
 .erf-split {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 60% 40%;
   gap: 0;
   align-items: start;
 }
