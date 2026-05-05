@@ -257,6 +257,27 @@ function loadFile(file, type) {
   reader.readAsText(file, 'UTF-8');
 }
 
+function ladePreisFile(file) {
+  if (!file) return;
+  const dz = document.getElementById('dz-preis');
+  const st = document.getElementById('st-preis');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const json  = JSON.parse(ev.target.result);
+      const datum = ladePreisJSON(json);
+      if (!datum) { dz.classList.add('errored'); st.className='dz-status err'; st.textContent='✗ Ungültige Preisliste'; return; }
+      dz.classList.remove('errored'); dz.classList.add('loaded');
+      st.className = 'dz-status ok';
+      st.textContent = '✓ Preisliste vom ' + datum + '  (' + S.preisMap.size.toLocaleString('de') + ' Einträge)';
+      if (S.result) render();
+    } catch(e) {
+      dz.classList.add('errored'); st.className='dz-status err'; st.textContent='✗ Fehler: ' + e.message;
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
 // ════════════════════════════════════════════════════════
 //  LOCALSTORAGE — Kartenliste cachen
 // ════════════════════════════════════════════════════════
@@ -334,7 +355,7 @@ function clearKartenCache() {
 const LS_INV_META = 'fab_inv_meta';
 const LS_INV_CSV  = 'fab_inv_csv';
 
-const PREIS_URL = 'https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_16.json';
+const PREIS_DL_URL = 'https://www.cardmarket.com/en/FleshAndBlood/Data/Price-Guide';
 const LS_PREIS_META  = 'fab_preis_meta';
 const LS_PREIS_MAP   = 'fab_preis_map';
 
@@ -437,33 +458,33 @@ function formatPreis(p) {
   return p == null ? '–' : '€ ' + p.toFixed(2).replace('.', ',');
 }
 
-async function fetchNeuestePreisliste() {
+function ladePreisJSON(json) {
+  if (!json?.priceGuides) return false;
+  const datum = new Date(json.createdAt).toLocaleDateString('de-DE');
+  S.preisMap = new Map(
+    json.priceGuides.map(e => [e.idProduct, { t: e.trend, tf: e['trend-foil'] }])
+  );
   try {
-    const res = await fetch(PREIS_URL);
-    if (!res.ok) return { neu: false };
-    const json = await res.json();
-    if (!json?.priceGuides) return { neu: false };
-
-    const datum = new Date(json.createdAt).toLocaleDateString('de-DE');
-    const meta  = JSON.parse(localStorage.getItem(LS_PREIS_META) || 'null');
-    if (meta?.datum === datum && S.preisMap) return { neu: false, datum };
-
-    S.preisMap = new Map(
-      json.priceGuides.map(e => [e.idProduct, { t: e.trend, tf: e['trend-foil'] }])
-    );
-    try {
-      localStorage.setItem(LS_PREIS_META, JSON.stringify({ datum, ts: Date.now() }));
-      localStorage.setItem(LS_PREIS_MAP,  JSON.stringify([...S.preisMap]));
-    } catch(e) {}
-    return { neu: true, datum };
-  } catch(e) { return { neu: false }; }
+    localStorage.setItem(LS_PREIS_META, JSON.stringify({ datum, ts: Date.now() }));
+    localStorage.setItem(LS_PREIS_MAP,  JSON.stringify([...S.preisMap]));
+  } catch(e) {}
+  return datum;
 }
 
 // Cache beim Seitenstart laden
 (function() {
   try { ladeKartenAusCache(); } catch(e) {}
   try { ladeInvAusCache();    } catch(e) {}
-  try { ladePreisAusCache();  } catch(e) {}
+  try {
+    ladePreisAusCache();
+    if (S.preisMap) {
+      const meta = JSON.parse(localStorage.getItem(LS_PREIS_META) || 'null');
+      const dz = document.getElementById('dz-preis');
+      const st = document.getElementById('st-preis');
+      if (dz) dz.classList.add('loaded');
+      if (st) { st.className='dz-status ok'; st.textContent='✓ Preisliste vom ' + (meta?.datum||'?') + ' (gecacht)'; }
+    }
+  } catch(e) {}
   // btn-run Status nach beiden Caches aktualisieren
   document.getElementById('btn-run').disabled = !(S.kartenCSV && S.invCSV);
 
@@ -577,7 +598,7 @@ function analysiereGruppe(sets, zielMap, invMap) {
 // ════════════════════════════════════════════════════════
 //  ANALYSE — Einstiegspunkt
 // ════════════════════════════════════════════════════════
-async function runAnalyse() {
+function runAnalyse() {
   const zielMap = {};
   zielMap['Token'] = parseInt(document.getElementById('cfg-ziel-Token')?.value) || 20;
   zielMap['Common'] = parseInt(document.getElementById('cfg-ziel-Common')?.value) || 20;
@@ -593,14 +614,7 @@ async function runAnalyse() {
   sm.innerHTML = '<span class="spinner" aria-hidden="true"></span>Analysiere…';
   document.getElementById('btn-run').disabled = true;
 
-  // Preisliste parallel im Hintergrund holen (max. 4s Wartezeit)
-  const preisPromise = Promise.race([
-    fetchNeuestePreisliste(),
-    new Promise(r => setTimeout(() => r({ neu: false, timeout: true }), 4000))
-  ]);
-
-  await new Promise(r => setTimeout(r, 30)); // UI-Update abwarten
-
+  setTimeout(() => {
   try {
     const alleExpansions = [...new Set(S.kartenCSV.map(r => r.expansion).filter(Boolean))];
     const kartenProSet = new Map();
@@ -631,10 +645,9 @@ async function runAnalyse() {
     S.activeSet = { haupt:null,      andere:null      };
     S.search    = { haupt:'',        andere:''        };
 
-    const preisResult = await preisPromise;
     const gesamt = haupt.stats.gesamt + andere.stats.gesamt;
     const preisHinweis = S.preisMap
-      ? (preisResult.neu ? ' · Preise vom ' + preisResult.datum : ' · Preise gecacht')
+      ? (' · Preise vom ' + (JSON.parse(localStorage.getItem(LS_PREIS_META)||'{}').datum || '?'))
       : '';
     sm.className = 'status-msg done';
     sm.textContent = '✓ ' + gesamt.toLocaleString('de') + ' fehlende C/R · '
@@ -647,6 +660,7 @@ async function runAnalyse() {
     document.getElementById('btn-run').disabled = false;
     console.error(err);
   }
+  }, 30);
 }
 
 // ════════════════════════════════════════════════════════

@@ -21,7 +21,7 @@
     <h1>Flesh &amp; Blood — Inventar-Bericht</h1>
     <p>Bestandsanalyse · läuft vollständig lokal im Browser · keine Daten werden übertragen</p>
   </div>
-  <span class="header-version">v1.2.7 · 05.05.2026 12:59</span>
+  <span class="header-version">v1.2.8 · 05.05.2026 13:04</span>
   <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Einstellungen" style="display:none">⚙️</button>
 </header>
 
@@ -77,6 +77,32 @@
         </div>
       </div>
       <div id="cache-info-box-inv" style="display:none;margin-top:10px"></div>
+
+      <div style="height:12px"></div>
+
+      <div class="drop-zone" id="dz-preis" role="button" tabindex="0"
+           aria-label="Preisliste JSON hochladen"
+           aria-describedby="st-preis"
+           ondragover="dzOver(event,'dz-preis')"
+           ondragleave="dzLeave('dz-preis')"
+           ondrop="event.preventDefault();dzLeave('dz-preis');ladePreisFile(event.dataTransfer.files[0])"
+           onclick="this.querySelector('input').click();event.preventDefault()"
+           onkeydown="if(event.key==='Enter'||event.key===' ')this.querySelector('input').click()">
+        <input type="file" accept=".json" aria-label="Preisliste JSON auswählen"
+               onchange="ladePreisFile(this.files[0])"
+               onclick="event.stopPropagation()">
+        <div class="dz-inner">
+          <span class="dz-icon" aria-hidden="true">💰</span>
+          <div class="dz-title">Preisliste</div>
+          <div class="dz-hint">Cardmarket Price Guide JSON<br>
+            <a href="https://www.cardmarket.com/en/FleshAndBlood/Data/Price-Guide"
+               target="_blank" rel="noopener"
+               onclick="event.stopPropagation()"
+               style="color:var(--gold-light);font-size:.75rem">↗ Herunterladen</a>
+          </div>
+          <div class="dz-status" id="st-preis" role="status" aria-live="polite"></div>
+        </div>
+      </div>
 
       </div>    </section>
 
