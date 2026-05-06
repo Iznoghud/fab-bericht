@@ -1286,7 +1286,7 @@ function renderWantsPanel() {
     const head =
       '<div class="erf-card-head" onclick="wantsToggleCard(\'' + cid + '\')">' +
         '<div>' +
-          '<div class="erf-card-name">' + esc(card.name) + (foilStr?' <span style="font-size:.7rem">'+foilStr+'</span>':'') + '</div>' +
+          '<div class="erf-card-name">' + esc(card.name) + (foilStr?' <span style="font-size:.7rem">'+foilStr+'</span>':'') + (card.expansionCode ? ' <span class="erf-setcode">' + esc(card.expansionCode + (card.cn ? ' ' + card.cn : '')) + '</span>' : '') + '</div>' +
           '<div class="erf-card-meta">' +
             '<span style="color:' + rarityColor(card.rarity) + '">' + esc(card.rarity) + '</span>' +
             '<span>Im Inventar: <span class="erf-card-meta-inv' + (invZero?' zero':'') + '">' + card.im_inv + '</span></span>' +
@@ -1335,7 +1335,7 @@ function renderWantsPanel() {
     return '<div class="erf-session-item">' +
       '<div class="erf-session-item-qty">×' + e.qty + '</div>' +
       '<div class="erf-session-item-body">' +
-        '<div class="erf-session-item-name" style="font-family:var(--font-mono);font-size:.8rem">' + esc(baseName + suffix) + '</div>' +
+        '<div class="erf-session-item-name" style="font-family:var(--font-mono);font-size:.8rem">' + esc(baseName + suffix) + (e.setCode ? ' <span class="erf-setcode">' + esc(e.setCode + (e.cn ? ' ' + e.cn : '')) + '</span>' : '') + '</div>' +
       '</div>' +
       '<div class="erf-session-item-del" onclick="wantsRemove(' + i + ')" role="button">✕</div>' +
     '</div>';
@@ -1392,7 +1392,7 @@ function wantsGetOrCreate(cid) {
       });
     }
     if (!card) return null;
-    entry = { cardId: card.cardmarketId, name: card.name, foilType: 'none', qty: 0, fehlend: card.fehlend };
+    entry = { cardId: card.cardmarketId, name: card.name, foilType: 'none', qty: 0, fehlend: card.fehlend, setCode: card.setCode || card.expansionCode || '', cn: card.cn || '' };
     S.wants.session.push(entry);
   }
   return entry;
@@ -1657,7 +1657,7 @@ function renderScanPanel() {
     const head =
       '<div class="erf-card-head" onclick="erfToggleCard(\'' + cid + '\')">' +
         '<div>' +
-          '<div class="erf-card-name">' + esc(card.name) + (foilStr?' <span style="font-size:.7rem">'+foilStr+'</span>':'') + '</div>' +
+          '<div class="erf-card-name">' + esc(card.name) + (foilStr?' <span style="font-size:.7rem">'+foilStr+'</span>':'') + (card.expansionCode ? ' <span class="erf-setcode">' + esc(card.expansionCode + (card.cn ? ' ' + card.cn : '')) + '</span>' : '') + '</div>' +
           '<div class="erf-card-meta">' +
             '<span style="color:' + rarityColor(card.rarity) + '">' + esc(card.rarity) + '</span>' +
             '<span>Im Inventar: <span class="erf-card-meta-inv' + (invZero?' zero':'') + '">' + card.im_inv + '</span></span>' +
@@ -1733,7 +1733,7 @@ function renderScanPanel() {
     return '<div class="erf-session-item">' +
       '<div class="erf-session-item-qty">+' + e.qty + '</div>' +
       '<div class="erf-session-item-body">' +
-        '<div class="erf-session-item-name">' + esc(e.name) + '</div>' +
+        '<div class="erf-session-item-name">' + esc(e.name) + (e.setCode ? ' <span class="erf-setcode">' + esc(e.setCode + (e.cn ? ' ' + e.cn : '')) + '</span>' : '') + '</div>' +
         (foilLabel ? '<div class="erf-session-item-detail">' + foilLabel + '</div>' : '') +
       '</div>' +
       '<div class="erf-session-item-del" onclick="erfRemove(' + i + ')" role="button" aria-label="Entfernen">✕</div>' +
@@ -1982,7 +1982,7 @@ function erfSearch(val) {
     const head =
       '<div class="erf-card-head" onclick="erfToggleCard(\'' + cid + '\')">' +
         '<div>' +
-          '<div class="erf-card-name">' + esc(card.name) + (foilStr?' <span style="font-size:.7rem">'+foilStr+'</span>':'') + '</div>' +
+          '<div class="erf-card-name">' + esc(card.name) + (foilStr?' <span style="font-size:.7rem">'+foilStr+'</span>':'') + (card.expansionCode ? ' <span class="erf-setcode">' + esc(card.expansionCode + (card.cn ? ' ' + card.cn : '')) + '</span>' : '') + '</div>' +
           '<div class="erf-card-meta">' +
             '<span style="color:' + rarityColor(card.rarity) + '">' + esc(card.rarity) + '</span>' +
             '<span>Im Inventar: <span class="erf-card-meta-inv' + (invZero?' zero':'') + '">' + card.im_inv + '</span></span>' +
